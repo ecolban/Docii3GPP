@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -17,9 +18,7 @@ import java.sql.SQLException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Statement;
-import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
@@ -29,7 +28,7 @@ import javax.sql.rowset.WebRowSet;
 
 /**
  * 
- * @author Erik Colban &copy; 2012 <br>
+ * @author Erik Colban &copy; 2013 <br>
  *         All Rights Reserved Worldwide
  */
 public class DataAccessObject {
@@ -40,13 +39,14 @@ public class DataAccessObject {
 	private boolean isConnected;
 	private String dbName;
 	private PreparedStatement[] stmtSaveNewRecord;
-	private PreparedStatement[] stmtUpdateExistingRecord;
+	private PreparedStatement[] stmtUpdateNotesExistingRecord;
+	private PreparedStatement[] stmtUpdateOtherExistingRecord;
 	private PreparedStatement[] stmtGetListEntries;
 	private PreparedStatement[] stmtFindEntries;
 	private PreparedStatement[] stmtGetRecord;
 	private PreparedStatement[] stmtDeleteRecord;
 	private List<Statement> statements = new ArrayList<Statement>();
-	private String[] tables = Configuration.getWorkingGroupTables();
+	private String[] tables = Configuration.getTables();
 	private static final ResourceBundle messageBundle = ResourceBundle
 			.getBundle("com/drawmetry/docii3gpp/resources/MessageBundle");
 	private static final String ABNORMAL_SHUT_DOWN = messageBundle
@@ -55,37 +55,41 @@ public class DataAccessObject {
 			.getString("NORMAL SHUTDOWN");
 	private static final String strCreateDocumentTable = "create table %s ("
 			+ "  ID           INTEGER NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
-			+ ", MEETING_ID   VARCHAR(10)" //
+			+ ", MEETING   VARCHAR(10)" //
 			+ ", AGENDA_ITEM  VARCHAR(10)" //
+			+ ", AGENDA_TITLE VARCHAR(300)" + ", URL          VARCHAR(80)" //
 			+ ", TDOC         CHAR(9)" //
-			+ ", URL          VARCHAR(80)" //
-			+ ", TITLE        VARCHAR(200)" //
-			+ ", SOURCE       VARCHAR(400)" //
 			+ ", DOC_TYPE     VARCHAR(16)" //
+			+ ", DOC_TITLE        VARCHAR(300)" //
+			+ ", SOURCE       VARCHAR(400)" //
 			+ ", WORK_ITEM    VARCHAR(50)" //
-			+ ", DECISION     VARCHAR(50)" //
 			+ ", REV_BY       CHAR(9)" //
 			+ ", REV_OF       CHAR(9)" //
 			+ ", LS_SOURCE    VARCHAR(50)" //
 			+ ", COMMENT      VARCHAR(400)" //
+			+ ", DECISION     VARCHAR(50)" //
 			+ ", NOTES        VARCHAR(2000)" //
 			+ ")";
 	private static final String strGetRecord = "select * from %s "
 			+ "where ID = ?";
 	private static final String strSaveNewRecord = "insert into %s "
-			+ "(MEETING_ID, AGENDA_ITEM, TDOC, URL, TITLE, SOURCE, DOC_TYPE, "
-			+ "WORK_ITEM, DECISION, REV_BY, REV_OF, LS_SOURCE, COMMENT, NOTES)"
-			+ " values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)";
+			+ "(MEETING, AGENDA_ITEM, AGENDA_TITLE, URL, TDOC, DOC_TYPE, DOC_TITLE, SOURCE, "
+			+ "WORK_ITEM, REV_BY, REV_OF, LS_SOURCE, COMMENT, DECISION, NOTES)"
+			+ " values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?, ?, ?)";
 	private static final String strGetListEntries = "select ID, TDOC from %s "
 			+ "where TDOC like ? order by TDOC desc";
-//	private static final String strFindEntries = "select ID, TDOC from %s "
-//			+ "where GROUPVAR like ? and TDOC like ? "
-//			+ "and LOWER(AUTHORS) like ? and LOWER(NOTES) like ? "
-//			+ "and UPLOADDATE >= ? and UPLOADDATE <= ? "
-//			+ "order by FILENAME desc";
-	private static final String strUpdateExistingRecord = "update %s "
-			+ "set URL = ?,     TITLE = ?,     AUTHORS = ?, "
-			+ "    NOTES = ?,     FILENAME = ? where ID = ?";
+	private static final String strFindEntries = "select ID, TDOC from %s "
+			+ "where MEETING like ? and TDOC like ? "
+			+ "and LOWER(DOC_TITLE) like ? "
+			+ "and LOWER(SOURCE) like ? and LOWER(NOTES) like ? "
+			+ "and LOWER(AGENDA_TITLE) like ? and LOWER(WORK_ITEM) like ? "
+			+ "and LOWER(DECISION) like ? " + "order by TDOC desc";
+	private static final String strUpdateNotesExistingRecord = "update %s "
+			+ "set NOTES = ? where ID = ?";
+	private static final String strUpdateOtherExistingRecord = "update %s "
+			+ "set AGENDA_ITEM = ?,  AGENDA_TITLE = ?, URL = ?, DOC_TYPE = ?, "
+			+ "DOC_TITLE = ?, SOURCE = ?, WORK_ITEM = ?, REV_BY = ?, REV_OF = ?, "
+			+ "LS_SOURCE = ?, COMMENT = ?, DECISION = ? where ID = ?";
 	private static final String strDeleteRecord = "delete from %s "
 			+ "where ID = ?";
 
@@ -250,7 +254,7 @@ public class DataAccessObject {
 		try {
 			dbCon = DriverManager.getConnection(dbUrl, dbProperties);
 			DatabaseMetaData dmd = dbCon.getMetaData();
-			for (String table : Configuration.getWorkingGroupTables()) {
+			for (String table : tables) {
 				ResultSet rs = dmd.getTables(null, null, table, null);
 				if (!rs.next()) {
 					createTable(dbCon, table);
@@ -277,7 +281,8 @@ public class DataAccessObject {
 			dbConnection = DriverManager.getConnection(dbUrl, dbProperties);
 			dbConnection.setAutoCommit(false);
 			stmtSaveNewRecord = new PreparedStatement[tables.length];
-			stmtUpdateExistingRecord = new PreparedStatement[tables.length];
+			stmtUpdateNotesExistingRecord = new PreparedStatement[tables.length];
+			stmtUpdateOtherExistingRecord = new PreparedStatement[tables.length];
 			stmtGetRecord = new PreparedStatement[tables.length];
 			stmtDeleteRecord = new PreparedStatement[tables.length];
 			stmtGetListEntries = new PreparedStatement[tables.length];
@@ -288,10 +293,14 @@ public class DataAccessObject {
 				stmtSaveNewRecord[i] = dbConnection.prepareStatement(stmt,
 						Statement.RETURN_GENERATED_KEYS);
 				statements.add(stmtSaveNewRecord[i]);
-				stmt = String.format(strUpdateExistingRecord, tables[i]);
-				stmtUpdateExistingRecord[i] = dbConnection
+				stmt = String.format(strUpdateNotesExistingRecord, tables[i]);
+				stmtUpdateNotesExistingRecord[i] = dbConnection
 						.prepareStatement(stmt);
-				statements.add(stmtUpdateExistingRecord[i]);
+				statements.add(stmtUpdateNotesExistingRecord[i]);
+				stmt = String.format(strUpdateOtherExistingRecord, tables[i]);
+				stmtUpdateOtherExistingRecord[i] = dbConnection
+						.prepareStatement(stmt);
+				statements.add(stmtUpdateOtherExistingRecord[i]);
 				stmt = String.format(strGetRecord, tables[i]);
 				stmtGetRecord[i] = dbConnection.prepareStatement(stmt);
 				statements.add(stmtGetRecord[i]);
@@ -301,9 +310,9 @@ public class DataAccessObject {
 				stmt = String.format(strGetListEntries, tables[i]);
 				stmtGetListEntries[i] = dbConnection.prepareStatement(stmt);
 				statements.add(stmtGetListEntries[i]);
-//				stmt = String.format(strFindEntries, tables[i]);
-//				stmtFindEntries[i] = dbConnection.prepareStatement(stmt);
-//				statements.add(stmtFindEntries[i]);
+				stmt = String.format(strFindEntries, tables[i]);
+				stmtFindEntries[i] = dbConnection.prepareStatement(stmt);
+				statements.add(stmtFindEntries[i]);
 			}
 			isConnected = dbConnection != null; // auto-commit is on.
 		} catch (SQLException ex) {
@@ -383,17 +392,23 @@ public class DataAccessObject {
 		int index = getTableIndex(table);
 		try {
 			stmtSaveNewRecord[index].clearParameters();
-			stmtSaveNewRecord[index].setInt(1, record.getYear());
-			stmtSaveNewRecord[index].setInt(2, record.getDcn());
-			stmtSaveNewRecord[index].setInt(3, record.getRev());
-			stmtSaveNewRecord[index].setString(4, record.getGroupCode());
-			stmtSaveNewRecord[index].setString(5, record.getTitle());
-			stmtSaveNewRecord[index].setString(6, record.getAuthors());
-			stmtSaveNewRecord[index].setTimestamp(7,
-					record.getUploadTimeStamp());
-			stmtSaveNewRecord[index].setString(8, record.getURL().toString());
-			stmtSaveNewRecord[index].setString(9, record.getFileName());
-			stmtSaveNewRecord[index].setString(10, record.getNotes());
+			stmtSaveNewRecord[index].setString(1, record.getMeeting());
+			stmtSaveNewRecord[index].setString(2, record.getAgendaItem());
+			stmtSaveNewRecord[index].setString(3, record.getAgendaTitle());
+			URL url = record.getUrl();
+			stmtSaveNewRecord[index].setString(4,
+					url == null ? null : url.toString());
+			stmtSaveNewRecord[index].setString(5, record.getTDoc());
+			stmtSaveNewRecord[index].setString(6, record.getDocType());
+			stmtSaveNewRecord[index].setString(7, record.getDocTitle());
+			stmtSaveNewRecord[index].setString(8, record.getSource());
+			stmtSaveNewRecord[index].setString(9, record.getWorkItem());
+			stmtSaveNewRecord[index].setString(10, record.getRevByTDoc());
+			stmtSaveNewRecord[index].setString(11, record.getRevOfTDoc());
+			stmtSaveNewRecord[index].setString(12, record.getLsSource());
+			stmtSaveNewRecord[index].setString(13, record.getComment());
+			stmtSaveNewRecord[index].setString(14, record.getDecision());
+			stmtSaveNewRecord[index].setString(15, record.getNotes());
 			dbConnection.commit();
 			@SuppressWarnings("unused")
 			int rowCount = stmtSaveNewRecord[index].executeUpdate();
@@ -411,34 +426,36 @@ public class DataAccessObject {
 	 * Performs a database query to select all entries that match the given
 	 * arguments.
 	 * 
-	 * @param group
-	 * @param fileNme
-	 * @param authors
+	 * @param meeting
+	 * @param tDoc
+	 * @param source
 	 * @param notes
-	 * @param uploadFrom
-	 * @param uploadTo
+	 * @param decision
+	 * @param  
+	 * @param
+	 * @param docTitle
 	 * @return
 	 */
-	public List<DocEntry> findEntries(String table, String group,
-			String fileNme, String authors, String notes, Date uploadFrom,
-			Date uploadTo) {
+	public List<DocEntry> findEntries(String table, String meeting,
+			String tDoc, String title, String source, String notes, String agendaTitle,
+			String workItem, String decision) {
 		List<DocEntry> listEntries = new ArrayList<DocEntry>();
 		ResultSet results = null;
 		int index = getTableIndex(table);
 		try {
 			stmtFindEntries[index].clearParameters();
-			stmtFindEntries[index].setString(1, group);
-			stmtFindEntries[index].setString(2, fileNme.toLowerCase());
-			stmtFindEntries[index].setString(3, authors.toLowerCase());
-			stmtFindEntries[index].setString(4, notes.toLowerCase());
-			stmtFindEntries[index].setTimestamp(5, new java.sql.Timestamp(
-					uploadFrom.getTime()));
-			stmtFindEntries[index].setTimestamp(6, new java.sql.Timestamp(
-					uploadTo.getTime()));
+			stmtFindEntries[index].setString(1, meeting);
+			stmtFindEntries[index].setString(2, tDoc.toLowerCase());
+			stmtFindEntries[index].setString(3, title.toLowerCase());
+			stmtFindEntries[index].setString(4, source.toLowerCase());
+			stmtFindEntries[index].setString(5, notes.toLowerCase());
+			stmtFindEntries[index].setString(6, agendaTitle.toLowerCase());
+			stmtFindEntries[index].setString(7, workItem.toLowerCase());
+			stmtFindEntries[index].setString(8, decision.toLowerCase());
 			results = stmtFindEntries[index].executeQuery();
 			while (results.next()) {
 				int id = results.getInt(1);
-				String fileName = results.getString("FILENAME");
+				String fileName = results.getString("TDOC");
 				DocEntry entry = new DocEntry(fileName, id);
 				listEntries.add(entry);
 			}
@@ -451,13 +468,13 @@ public class DataAccessObject {
 		return listEntries;
 	}
 
-	public List<DocEntry> findEntries(String table, String fileName) {
+	public List<DocEntry> findEntries(String table, String tDoc) {
 		List<DocEntry> listEntries = new ArrayList<DocEntry>();
 		ResultSet results = null;
 		int index = getTableIndex(table);
 		try {
 			stmtGetListEntries[index].clearParameters();
-			stmtGetListEntries[index].setString(1, fileName);
+			stmtGetListEntries[index].setString(1, tDoc);
 
 			results = stmtGetListEntries[index].executeQuery();
 			while (results.next()) {
@@ -474,55 +491,57 @@ public class DataAccessObject {
 		return listEntries;
 	}
 
-	public List<DocEntry> findEntries(String table, String yearStr,
-			String groupCode) {
-		List<DocEntry> listEntries = null;
-		int year = 0;
-		if (yearStr != null) {
-			try {
-				year = Integer.parseInt(yearStr);
-			} catch (NumberFormatException ex) {
-				yearStr = null;
-			}
-		}
-		String stmtStr;
-		if (yearStr == null) {
-			if (groupCode == null) {
-				stmtStr = "select ID, FILENAME from " + table
-						+ " order by FILENAME desc";
-			} else {
-				stmtStr = "select ID, FILENAME from " + table
-						+ " where GROUPVAR like '" + groupCode + "'"
-						+ " order by FILENAME desc";
-			}
-		} else {
-			if (groupCode == null) {
-				stmtStr = "select ID, FILENAME from " + table
-						+ " where YEARVAR = " + year
-						+ " order by FILENAME desc";
-			} else {
-				stmtStr = "select ID, FILENAME from " + table
-						+ " where YEARVAR = " + year + " and GROUPVAR like '"
-						+ groupCode + "' order by FILENAME desc";
-			}
-		}
-		try {
-			Statement statement = dbConnection.createStatement();
-			ResultSet rs = statement.executeQuery(stmtStr);
-			listEntries = new ArrayList<DocEntry>();
-			while (rs.next()) {
-				DocEntry entry = new DocEntry(rs.getString(2), rs.getInt(1));
-				listEntries.add(entry);
-			}
-			statement.close();
-			dbConnection.commit();
-		} catch (SQLException sqle) {
-			printSQLException(sqle);
-		}
-		return listEntries;
-	}
+	// public List<DocEntry> findEntries(String table, String yearStr,
+	// String groupCode) {
+	// List<DocEntry> listEntries = null;
+	// int year = 0;
+	// if (yearStr != null) {
+	// try {
+	// year = Integer.parseInt(yearStr);
+	// } catch (NumberFormatException ex) {
+	// yearStr = null;
+	// }
+	// }
+	// String stmtStr;
+	// if (yearStr == null) {
+	// if (groupCode == null) {
+	// stmtStr = "select ID, FILENAME from " + table
+	// + " order by FILENAME desc";
+	// } else {
+	// stmtStr = "select ID, FILENAME from " + table
+	// + " where GROUPVAR like '" + groupCode + "'"
+	// + " order by FILENAME desc";
+	// }
+	// } else {
+	// if (groupCode == null) {
+	// stmtStr = "select ID, FILENAME from " + table
+	// + " where YEARVAR = " + year
+	// + " order by FILENAME desc";
+	// } else {
+	// stmtStr = "select ID, FILENAME from " + table
+	// + " where YEARVAR = " + year + " and GROUPVAR like '"
+	// + groupCode + "' order by FILENAME desc";
+	// }
+	// }
+	// try {
+	// Statement statement = dbConnection.createStatement();
+	// ResultSet rs = statement.executeQuery(stmtStr);
+	// listEntries = new ArrayList<DocEntry>();
+	// while (rs.next()) {
+	// DocEntry entry = new DocEntry(rs.getString(2), rs.getInt(1));
+	// listEntries.add(entry);
+	// }
+	// statement.close();
+	// dbConnection.commit();
+	// } catch (SQLException sqle) {
+	// printSQLException(sqle);
+	// }
+	// return listEntries;
+	// }
 
 	/**
+	 * 
+	 * "update %s set NOTES = ?  where ID = ?";
 	 * 
 	 * @param id
 	 * @param record
@@ -530,44 +549,106 @@ public class DataAccessObject {
 	 */
 	public boolean editRecord(String table, int id, DocumentObject record) {
 
-		boolean bEdited = false;
+		boolean edited = false;
 		int index = getTableIndex(table);
 		try {
-			stmtUpdateExistingRecord[index].clearParameters();
-			stmtUpdateExistingRecord[index].clearParameters();
-			stmtUpdateExistingRecord[index].setString(1, record.getURL()
-					.toString());
-			stmtUpdateExistingRecord[index].setString(2, record.getTitle());
-			stmtUpdateExistingRecord[index].setString(3, record.getAuthors());
-			stmtUpdateExistingRecord[index].setString(4, record.getNotes());
-			stmtUpdateExistingRecord[index].setString(5, record.getFileName());
-			stmtUpdateExistingRecord[index].setInt(6, id);
-			stmtUpdateExistingRecord[index].executeUpdate();
+			stmtUpdateNotesExistingRecord[index].clearParameters();
+			stmtUpdateNotesExistingRecord[index]
+					.setString(1, record.getNotes());
+			stmtUpdateNotesExistingRecord[index].setInt(2, id);
+			stmtUpdateNotesExistingRecord[index].executeUpdate();
 			dbConnection.commit();
-			bEdited = true;
+			edited = true;
 		} catch (SQLException sqle) {
 			printSQLException(sqle);
 		}
 
-		return bEdited;
+		return edited;
+	}
+
+	/**
+	 * "update %s " +
+	 * "set AGENDA_ITEM = ?,  AGENDA_TITLE = ?, URL = ?, DOC_TYPE = ?, " +
+	 * "DOC_TITLE = ?, SOURCE = ?, WORK_ITEM = ?, REV_BY = ?, REV_OF = ?, " +
+	 * "LS_SOURCE = ?, COMMENT = ?, DECISION = ? where ID = ?"
+	 * 
+	 * @param table
+	 * @param id
+	 * @param doc
+	 * @return
+	 */
+	public boolean mergeRecord(String table, int id, DocumentObject doc) {
+		boolean edited = false;
+		int index = getTableIndex(table);
+		URL url = doc.getUrl();
+		try {
+			stmtUpdateOtherExistingRecord[index].clearParameters();
+			stmtUpdateOtherExistingRecord[index].setString(1,
+					doc.getAgendaItem());
+			stmtUpdateOtherExistingRecord[index].setString(2,
+					doc.getAgendaTitle());
+			stmtUpdateOtherExistingRecord[index].setString(3,
+					url == null ? null : url.toString());
+			stmtUpdateOtherExistingRecord[index].setString(4, 
+					doc.getDocType());
+			stmtUpdateOtherExistingRecord[index].setString(5, 
+					doc.getDocTitle());
+			stmtUpdateOtherExistingRecord[index].setString(6, 
+					doc.getSource());
+			stmtUpdateOtherExistingRecord[index].setString(7, 
+					doc.getWorkItem());
+			stmtUpdateOtherExistingRecord[index].setString(8,
+					doc.getRevByTDoc());
+			stmtUpdateOtherExistingRecord[index].setString(9,
+					doc.getRevOfTDoc());
+			stmtUpdateOtherExistingRecord[index].setString(10,
+					doc.getLsSource());
+			stmtUpdateOtherExistingRecord[index].setString(11, 
+					doc.getComment());
+			stmtUpdateOtherExistingRecord[index].setString(12, 
+					doc.getDecision());
+			stmtUpdateOtherExistingRecord[index].setInt(13, id);
+			stmtUpdateOtherExistingRecord[index].executeUpdate();
+			dbConnection.commit();
+			edited = true;
+		} catch (SQLException sqle) {
+			printSQLException(sqle);
+		}
+
+		return edited;
 	}
 
 	public boolean deleteRecord(String table, int id) {
-		boolean bDeleted = false;
+		boolean deleted = false;
 		int index = getTableIndex(table);
 		try {
 			stmtDeleteRecord[index].clearParameters();
 			stmtDeleteRecord[index].setInt(1, id);
 			stmtDeleteRecord[index].executeUpdate();
 			dbConnection.commit();
-			bDeleted = true;
+			deleted = true;
 		} catch (SQLException sqle) {
 			sqle.printStackTrace();
 		}
 
-		return bDeleted;
+		return deleted;
 	}
 
+	/**
+	 * ID INTEGER NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH
+	 * 1, INCREMENT BY 1)" + ", MEETING VARCHAR(10)" // +
+	 * ", AGENDA_ITEM  VARCHAR(10)" // + ", AGENDA_TITLE VARCHAR(100)" +
+	 * ", URL          VARCHAR(80)" // + ", TDOC         CHAR(9)" // +
+	 * ", DOC_TYPE     VARCHAR(16)" // + ", DOC_TITLE        VARCHAR(200)" // +
+	 * ", SOURCE       VARCHAR(400)" // + ", WORK_ITEM    VARCHAR(50)" // +
+	 * ", REV_BY       CHAR(9)" // + ", REV_OF       CHAR(9)" // +
+	 * ", LS_SOURCE    VARCHAR(50)" // + ", COMMENT      VARCHAR(400)" // +
+	 * ", DECISION     VARCHAR(50)" // + ", NOTES        VARCHAR(2000)" //
+	 * 
+	 * @param table
+	 * @param id
+	 * @return
+	 */
 	public DocumentObject getDocumentOject(String table, int id) {
 		DocumentObject docObj = null;
 		int index = getTableIndex(table);
@@ -576,22 +657,28 @@ public class DataAccessObject {
 			stmtGetRecord[index].setInt(1, id);
 			ResultSet result = stmtGetRecord[index].executeQuery();
 			if (result.next()) {
-				int year = result.getInt("YEARVAR");
-				int dcn = result.getInt("DCN");
-				int rev = result.getInt("REV");
-				String group = result.getString("GROUPVAR");
-				String title = result.getString("TITLE");
-				String authors = result.getString("AUTHORS");
-				Date uploadDate = new Date(result.getTimestamp("UPLOADDATE")
-						.getTime());
+				String meeting = result.getString("MEETING");
+				String agendaItem = result.getString("AGENDA_ITEM");
+				String agendaTitle = result.getString("AGENDA_TITLE");
 				String url = result.getString("URL");
+				String tDoc = result.getString("TDOC");
+				String docType = result.getString("DOC_TYPE");
+				String docTitle = result.getString("DOC_TITLE");
+				String source = result.getString("SOURCE");
+				String workItem = result.getString("WORK_ITEM");
+				String revByTDoc = result.getString("REV_BY");
+				String revOfTDoc = result.getString("REV_OF");
+				String lsSource = result.getString("LS_SOURCE");
+				String comment = result.getString("COMMENT");
+				String decision = result.getString("DECISION");
 				String notes = result.getString("NOTES");
 
-				docObj = new DocumentObject(id, year, dcn, rev, group, title,
-						authors, uploadDate, url, notes);
+				docObj = new DocumentObject(id, meeting, agendaItem,
+						agendaTitle, url, tDoc, docType, docTitle, source,
+						workItem, revByTDoc, revOfTDoc, lsSource, comment,
+						decision, notes);
 			}
 			dbConnection.commit();
-		} catch (ParseException ex) {
 		} catch (MalformedURLException ex) {
 		} catch (SQLException sqle) {
 			sqle.printStackTrace();
@@ -629,4 +716,5 @@ public class DataAccessObject {
 		}
 		return -1;
 	}
+
 }
