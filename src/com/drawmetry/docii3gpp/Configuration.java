@@ -308,20 +308,20 @@ public class Configuration extends DefaultHandler {
 			throw new SAXException("No root");
 		}
 		String meetingName = null;
-		String tDocList = null;
+		String urlString = null;
 		String dir = null;
 		for (int i = 0; i < atts.getLength(); i++) {
 			if (atts.getQName(i).equalsIgnoreCase("name")) {
 				meetingName = atts.getValue(i);
 			} else if (atts.getQName(i).equalsIgnoreCase("tdoclist")) {
-				tDocList = atts.getValue(i);
+				urlString = atts.getValue(i);
 			} else if (atts.getQName(i).equalsIgnoreCase("dir")) {
 				dir = atts.getValue(i);
 			}
 		}
-		if (meetingName != null && tDocList != null && dir != null) {
+		if (meetingName != null && urlString != null && dir != null) {
 			try {
-				URL url = new File(localFilesRoot, tDocList).toURI().toURL();
+				URL url = new URL(urlString);
 				File directory = new File(localFilesRoot, dir);
 				Configuration.meetings.put(meetingName, new Meeting(url,
 						directory));
