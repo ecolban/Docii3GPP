@@ -23,7 +23,7 @@ import javax.swing.SwingUtilities;
 public class Initializer {
 
     private File docDir;
-    private static final Logger LOGGER = Logger.getLogger("com.drawmetry.dociimentor");
+    private static final Logger LOGGER = Logger.getLogger("com.drawmetry.docii3gpp");
 
     public static void main(String[] args) {
         LOGGER.setLevel(Level.ALL);
@@ -44,21 +44,8 @@ public class Initializer {
             assert false;
         }
         file = new File(file, "dociiconfig.xml");
-        if (!file.exists()) {
-            ConfigurationDialog dialog = new ConfigurationDialog(null, true);
-            dialog.setVisible(true);
-            docDir = dialog.getSelectedDirectory();
-            dialog.dispose();
-            dialog = null;
-            try {
-                InputStream configInStream = this.getClass().getResourceAsStream("resources/dociiconfig.xml");
-                assert configInStream != null;
-                filter(configInStream, file);
-            } catch (IOException ex) {
-                LOGGER.log(Level.SEVERE, null, ex);
-            } catch (SecurityException ex) {
-                LOGGER.log(Level.SEVERE, null, ex);
-            }
+        if(!file.exists()) {
+        	LOGGER.log(Level.SEVERE, "dociiconfig.xml not found");
         }
         try {
             File logFile = new File(System.getProperty("user.home"), ".dociimentor/logfile.txt");
@@ -66,44 +53,7 @@ public class Initializer {
                     new FileOutputStream(logFile), new SimpleFormatter());
             LOGGER.addHandler(logFileHandler);
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(Initializer.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    private void filter(InputStream streamIn, File fileOut) throws IOException {
-        String lineIn;
-        String lineOut;
-        BufferedReader reader = null;
-        BufferedWriter writer = null;
-        try {
-            reader = new BufferedReader(new InputStreamReader(streamIn));
-            writer = new BufferedWriter(new FileWriter(fileOut));
-            while ((lineIn = reader.readLine()) != null) {
-                if (lineIn.matches("\\s*<localfiles.*>\\s*")) {
-                    lineOut =
-                            "    <localfiles root = \"" + docDir + "\">\n";
-                } else {
-                    lineOut = lineIn + "\n";
-                }
-                writer.write(lineOut);
-            }
-
-        } finally {
-            if (writer != null) {
-                try {
-                    writer.flush();
-                    writer.close();
-                } catch (IOException ex) {
-                    LOGGER.log(Level.SEVERE, null, ex);
-                }
-            }
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException ex) {
-                    LOGGER.log(Level.SEVERE, null, ex);
-                }
-            }
+            LOGGER.log(Level.SEVERE, null, ex);
         }
     }
 }

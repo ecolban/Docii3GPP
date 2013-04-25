@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="C:/Users/ecolban/workspace/Docii3GPP/Lib/poi-3.9-20121203.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="C:/Users/ecolban/workspace/Docii3GPP/Lib/derby.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

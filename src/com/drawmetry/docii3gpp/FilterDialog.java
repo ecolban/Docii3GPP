@@ -77,8 +77,6 @@ public class FilterDialog extends JDialog {
 	 */
 	private void initComponents() {
 
-		ResourceBundle bundle = java.util.ResourceBundle
-				.getBundle("com/drawmetry/docii3gpp/resources/MessageBundle"); // NOI18N
 		setLayout(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
 		Insets insets = new Insets(5, 5, 5, 5);
@@ -86,7 +84,7 @@ public class FilterDialog extends JDialog {
 
 		JLabel tDocLabel = new JLabel();
 		tDocLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
-		tDocLabel.setText(bundle.getString("FILE NAME")); // NOI18N
+		tDocLabel.setText("File name"); // NOI18N
 		c.anchor = GridBagConstraints.LINE_START;
 		c.gridx = 0;
 		c.gridy = row;
@@ -120,7 +118,7 @@ public class FilterDialog extends JDialog {
 
 		JLabel authorsLabel = new JLabel();
 		authorsLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
-		authorsLabel.setText(bundle.getString("AUTHORS") + ":"); // NOI18N
+		authorsLabel.setText("Source:"); // NOI18N
 		c.gridx = 0;
 		c.gridy = row;
 		c.insets = insets;
@@ -168,7 +166,7 @@ public class FilterDialog extends JDialog {
 
 		JLabel notesLabel = new JLabel();
 		notesLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
-		notesLabel.setText(bundle.getString("NOTES") + ":"); // NOI18N
+		notesLabel.setText("Notes:"); // NOI18N
 		c.gridx = 0;
 		c.gridy = row;
 		c.insets = insets;
@@ -202,7 +200,7 @@ public class FilterDialog extends JDialog {
 		buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		JButton clearButton = new JButton();
 		clearButton.setFont(new java.awt.Font("SansSerif", 0, 11));
-		clearButton.setText(bundle.getString("CLEAR")); // NOI18N
+		clearButton.setText("Clear"); // NOI18N
 		clearButton.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent evt) {
 				clearButtonActionPerformed(evt);
@@ -212,7 +210,7 @@ public class FilterDialog extends JDialog {
 
 		JButton cancelButton = new JButton();
 		cancelButton.setFont(new java.awt.Font("SansSerif", 0, 11));
-		cancelButton.setText(bundle.getString("CANCEL")); // NOI18N
+		cancelButton.setText("Cancel"); // NOI18N
 		cancelButton.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent evt) {
 				cancelButtonActionPerformed(evt);
@@ -222,7 +220,7 @@ public class FilterDialog extends JDialog {
 
 		JButton okButton = new JButton();
 		okButton.setFont(new java.awt.Font("SansSerif", 0, 11));
-		okButton.setText(bundle.getString("OK")); // NOI18N
+		okButton.setText("OK"); // NOI18N
 		okButton.setMaximumSize(new java.awt.Dimension(1000, 23));
 		okButton.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent evt) {

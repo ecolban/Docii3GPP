@@ -43,8 +43,9 @@ public class Synchronizer implements Runnable {
 	public void run() {
 		LOGGER.log(Level.INFO, String.format("%s\n", STARTING_SYNC));
 		try {
-			PageHandler handler = new PageHandler(ui);
-
+			S2PageHandler_1 handler = new S2PageHandler_1(ui);
+//			S2PageHandler_2 handler = new S2PageHandler_2(ui);
+//			R2PageHandler handler = new R2PageHandler(ui);
 			URLConnection con = (URLConnection) hostUrl
 					.openConnection();
 			BufferedReader input = new BufferedReader(new InputStreamReader(
@@ -52,6 +53,7 @@ public class Synchronizer implements Runnable {
 
 			String line = null;
 			while ((line = input.readLine()) != null) {
+//				System.out.println(line);
 				handler.readLine(line);
 			}
 

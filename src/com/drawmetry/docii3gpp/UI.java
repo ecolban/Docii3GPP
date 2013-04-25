@@ -31,12 +31,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
@@ -84,33 +82,21 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 @SuppressWarnings("serial")
 public class UI extends JFrame implements Runnable, ClipboardOwner {
 
-	private static final String revision = "Revision 1.0.0 (2013-04-11)";
-	private static final ResourceBundle messageBundle = ResourceBundle
-			.getBundle("com/drawmetry/docii3gpp/resources/MessageBundle");
-	private static final String DATABASE_LOCATION = messageBundle
-			.getString("DATABASE LOCATION");
-	private static final String ENTRY_NOT_FOUND_IN_DATABASE = messageBundle
-			.getString("ENTRY NOT FOUND IN DATABASE");
-	private static final String NO_ENTRY_SELECTED = messageBundle
-			.getString("NO ENTRY SELECTED");
-	private static final String ENTRIES_EXPORTED_TO = messageBundle
-			.getString("ENTRIES EXPORTED TO");
-	private static final String EXCEL = messageBundle.getString("EXCEL");
-	private static final String DOES_NOT_EXIST = messageBundle
-			.getString("DOES NOT EXIST");
-	private static final String DATABASE_URL = messageBundle
-			.getString("DATABASE URL");
-	private static final String FILTER = messageBundle.getString("FILTER");
-	private static final String FILTER_TOOL_TIP_TEXT = messageBundle
-			.getString("FILTER TOOL TIP TEXT");
-	private static final String SYNCHRONIZE = messageBundle
-			.getString("SYNCHRONIZE");
-	private static final String SYNCHRONIZE_TOOL_TIP_TEXT = messageBundle
-			.getString("SYNCHRONIZE TOOL TIP TEXT");
-	private static final String EXPORT = messageBundle.getString("EXPORT");
-	private static final String EXPORT_TOOL_TIP_TEXT = messageBundle
-			.getString("EXPORT TOOL TIP TEXT");
-	private static final String ABOUT = messageBundle.getString("ABOUT");
+	private static final String REVISION = "Revision 1.0.1 (2013-04-25)";
+	private static final String DATABASE_LOCATION = "Database Location";
+	private static final String ENTRY_NOT_FOUND_IN_DATABASE = "Entry not found in database";
+	private static final String NO_ENTRY_SELECTED = "No entry selected";
+	private static final String ENTRIES_EXPORTED_TO = "Entries exported to";
+	private static final String EXCEL = "Excel";
+	private static final String DOES_NOT_EXIST = " does not exist";
+	private static final String DATABASE_URL = "Database URL";
+	private static final String FILTER = "Search";
+	private static final String FILTER_TOOL_TIP_TEXT = "Narrow down the selection";
+	private static final String SYNCHRONIZE = "Synchronize";
+	private static final String SYNCHRONIZE_TOOL_TIP_TEXT = "Download data for selected year and group";
+	private static final String EXPORT = "Export";
+	private static final String EXPORT_TOOL_TIP_TEXT = "Export entries to an Excel file";
+	private static final String ABOUT ="About";
 
 	private static String[] meetings;
 	// TODO: allow for more than one meeting
@@ -135,13 +121,11 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	private JTextField revOfTextField;
 	private JTextField decisionTextField;
 	private JTextArea notesArea;
-	private static ResourceBundle bundle = ResourceBundle
-			.getBundle("com/drawmetry/docii3gpp/resources/MessageBundle");
 	private JTextArea outputArea;
 	private JTabbedPane docTabbedPane;
 	private JList<DocEntry> documentList;
 
-	private JComboBox meetingComboBox;
+	private JComboBox<String> meetingComboBox;
 	private JButton synchronizeButton;
 	private JButton stopButton;
 
@@ -379,7 +363,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		// revised by / revision of
 		JLabel revLabel = new JLabel();
 		revLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
-		revLabel.setText("Rev of/to:"); // NOI18N
+		revLabel.setText("Rev from/to:"); // NOI18N
 		c.gridx = 0;
 		c.gridy = row;
 		c.weightx = 0.0;
@@ -435,7 +419,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		notesArea = new JTextArea();
 		notesArea.setLineWrap(true);
 		notesArea.setRows(7);
-		notesArea.setToolTipText(bundle.getString("NOTES")); // NOI18N
+		notesArea.setToolTipText("Notes"); // NOI18N
 		notesArea.setWrapStyleWord(true);
 		notesScrollPane.setViewportView(notesArea);
 
@@ -460,7 +444,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		outputArea.setColumns(20);
 		outputArea.setEditable(false);
 		outputArea.setRows(5);
-		outputArea.setToolTipText(bundle.getString("MESSAGES")); // NOI18N
+		outputArea.setToolTipText("Messages"); // NOI18N
 		outputScrollPane.setViewportView(outputArea);
 
 		subSplitPane.setBottomComponent(outputScrollPane);
@@ -481,8 +465,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		documentScrollPane.setPreferredSize(new Dimension(200, 200));
 
 		documentList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		documentList.setToolTipText(bundle
-				.getString("DOUBLE-CLICK ON DOCUMENT")); // NOI18N
+		documentList.setToolTipText("Doble-click to open document"); // NOI18N
 		documentList.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent evt) {
 				documentListMouseClicked(evt);
@@ -504,7 +487,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		JPopupMenu popupMenu = new JPopupMenu();
 
 		JMenuItem copyDocId = new JMenuItem();
-		copyDocId.setText(bundle.getString("COPY TDOC #")); // NOI18N
+		copyDocId.setText("Copy TDoc #"); // NOI18N
 		copyDocId.setToolTipText("");
 		copyDocId.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
@@ -514,9 +497,8 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		popupMenu.add(copyDocId);
 
 		JMenuItem copyURL = new JMenuItem();
-		copyURL.setText(bundle.getString("COPY URL")); // NOI18N
-		copyURL.setToolTipText(bundle
-				.getString("COPY THE LOCATION OF THE FILE ON THE MENTOR SERVER")); // NOI18N
+		copyURL.setText("Copy URL"); // NOI18N
+		copyURL.setToolTipText("Copy URL"); // NOI18N
 		copyURL.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				copyURLActionPerformed(evt);
@@ -525,7 +507,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		popupMenu.add(copyURL);
 
 		JMenuItem deleteEntry = new JMenuItem();
-		deleteEntry.setText(bundle.getString("DELETE ENTRY")); // NOI18N
+		deleteEntry.setText("Delete entry"); // NOI18N
 		deleteEntry.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				deleteEntryActionPerformed(evt);
@@ -540,7 +522,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		/* File Menu */
 		JMenu fileMenu = new JMenu();
 		JMenuItem openMenuItem = new JMenuItem();
-		openMenuItem.setText(bundle.getString("OPEN DOC")); // NOI18N
+		openMenuItem.setText("Open document"); // NOI18N
 		openMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				openMenuItemActionPerformed(evt);
@@ -549,10 +531,10 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		fileMenu.add(openMenuItem);
 
 		JMenuItem exitMenuItem = new JMenuItem();
-		fileMenu.setText(bundle.getString("FILE MENU")); // NOI18N
-		fileMenu.setActionCommand(bundle.getString("FILE MENU")); // NOI18N
+		fileMenu.setText("File"); // NOI18N
+		fileMenu.setActionCommand("File Menu"); // NOI18N
 
-		exitMenuItem.setText(bundle.getString("EXIT")); // NOI18N
+		exitMenuItem.setText("Exit"); // NOI18N
 		exitMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				exitMenuItemActionPerformed(evt);
@@ -564,9 +546,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 
 		/* Edit Menu */
 		JMenu editMenu = new JMenu();
-		editMenu.setText(bundle.getString("EDIT MENU")); // NOI18N
+		editMenu.setText("Edit"); // NOI18N
 		JMenuItem copyFileNameMenuItem = new JMenuItem();
-		copyFileNameMenuItem.setText(bundle.getString("COPY TDOC #")); // NOI18N
+		copyFileNameMenuItem.setText("Copy TDoc #"); // NOI18N
 		copyFileNameMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				copyDocIdActionPerformed(evt);
@@ -575,7 +557,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		editMenu.add(copyFileNameMenuItem);
 
 		JMenuItem copyUrlMenuItem = new JMenuItem();
-		copyUrlMenuItem.setText(bundle.getString("COPY URL")); // NOI18N
+		copyUrlMenuItem.setText("Copy URL"); // NOI18N
 		copyUrlMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				copyURLActionPerformed(evt);
@@ -584,7 +566,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		editMenu.add(copyUrlMenuItem);
 
 		JMenuItem deleteEntryMenuItem = new JMenuItem();
-		deleteEntryMenuItem.setText(bundle.getString("DELETE ENTRY")); // NOI18N
+		deleteEntryMenuItem.setText("Delete entry"); // NOI18N
 		deleteEntryMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				deleteEntryActionPerformed(evt);
@@ -592,7 +574,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		});
 		editMenu.add(deleteEntryMenuItem);
 		JMenuItem deleteFileMenuItem = new JMenuItem();
-		deleteFileMenuItem.setText(bundle.getString("DELETE FILE")); // NOI18N
+		deleteFileMenuItem.setText("Delete file"); // NOI18N
 		deleteFileMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				deleteFileMenuItemActionPerformed(evt);
@@ -605,14 +587,14 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		/* Help Menu */
 
 		JMenu helpMenu = new JMenu();
-		helpMenu.setText(bundle.getString("HELP MENU")); // NOI18N
+		helpMenu.setText("Help"); // NOI18N
 
 		JMenuItem helpMenuItem = new JMenuItem();
-		helpMenuItem.setText(bundle.getString("HELP")); // NOI18N
+		helpMenuItem.setText("Help"); // NOI18N
 		helpMenuItem.setEnabled(false);
 		helpMenu.add(helpMenuItem);
 		JMenuItem aboutMenuItem = new JMenuItem();
-		aboutMenuItem.setText(bundle.getString("ABOUT")); // NOI18N
+		aboutMenuItem.setText("About"); // NOI18N
 		aboutMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				aboutMenuItemActionPerformed(evt);
@@ -629,7 +611,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 
 		meetingComboBox = new JComboBox<String>();
 		meetingComboBox.setFont(new Font("SansSerif", 0, 12)); // NOI18N
-		meetingComboBox.setModel(new DefaultComboBoxModel(meetings));
+		meetingComboBox.setModel(new DefaultComboBoxModel<String>(meetings));
 		meetingComboBox.setMaximumSize(new Dimension(200, 20));
 		meetingComboBox.setMinimumSize(new Dimension(100, 20));
 		meetingComboBox.setPreferredSize(new Dimension(150, 20));
@@ -980,7 +962,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 						+ "<td align=center>"
 						+ "Docii&trade; Document Manager &ndash; "
 						+ "3GPP Edition<br>"
-						+ revision
+						+ REVISION
 						+ "<br/>"
 						+ "<br/>"
 						+ "Copyright &copy; 2013 <a href=\"mailto:support@drawmetry.com\">Erik Colban</a><br>"

@@ -4,6 +4,7 @@ import com.drawmetry.docii3gpp.Configuration;
 import com.drawmetry.docii3gpp.DocEntry;
 import com.drawmetry.docii3gpp.DocumentObject;
 import com.drawmetry.docii3gpp.UI;
+import com.sun.crypto.provider.RSACipher;
 import com.sun.rowset.WebRowSetImpl;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -47,12 +48,8 @@ public class DataAccessObject {
 	private PreparedStatement[] stmtDeleteRecord;
 	private List<Statement> statements = new ArrayList<Statement>();
 	private String[] tables = Configuration.getTables();
-	private static final ResourceBundle messageBundle = ResourceBundle
-			.getBundle("com/drawmetry/docii3gpp/resources/MessageBundle");
-	private static final String ABNORMAL_SHUT_DOWN = messageBundle
-			.getString("ABNORMAL SHUTDOWN");
-	private static final String NORMAL_SHUT_DOWN = messageBundle
-			.getString("NORMAL SHUTDOWN");
+	private static final String ABNORMAL_SHUT_DOWN = "Abnormal shutdown";
+	private static final String NORMAL_SHUT_DOWN = "Normal shutdown";
 	private static final String strCreateDocumentTable = "create table %s ("
 			+ "  ID           INTEGER NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
 			+ ", MEETING   VARCHAR(10)" //
@@ -111,18 +108,23 @@ public class DataAccessObject {
 	 */
 	public static void main(String[] args) {
 		// dump("WG80211", new File("D:\\Database\\.docii3gpp\\dump.xml"));
+		Configuration.initialize();
 		DataAccessObject db = new DataAccessObject();
 		db.connect();
 		try {
 			Statement stmt = db.dbConnection.createStatement();
+			
 			ResultSet rs = stmt
-					.executeQuery("select ID from WG80221 where UPLOADDATE <= '2010-01-01 00:00:00'");
+					.executeQuery("select ID from TDOC_TABLE where MEETING like 'R2-81bis' and TDOC not like 'R2-%'");
+			int count = 0;
 			while (rs.next()) {
 				int id = rs.getInt("ID");
-				System.out.println("" + db.getDocumentOject("WG80221", id));
-				db.deleteRecord("WG80221", id);
+//				System.out.println("" + db.getDocumentOject("WG80221", id));
+				db.deleteRecord("TDOC_TABLE", id);
+				count++;
 				db.dbConnection.commit();
 			}
+			System.out.println("count = " + count);
 		} catch (SQLException ex) {
 			UI.LOGGER.log(Level.SEVERE, null, ex);
 		}
