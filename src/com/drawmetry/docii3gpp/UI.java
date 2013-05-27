@@ -51,6 +51,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
@@ -93,24 +94,26 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	private static final String FILTER = "Search";
 	private static final String FILTER_TOOL_TIP_TEXT = "Narrow down the selection";
 	private static final String SYNCHRONIZE = "Synchronize";
-	private static final String SYNCHRONIZE_TOOL_TIP_TEXT = "Download data for selected year and group";
+	private static final String SYNCHRONIZE_TOOL_TIP_TEXT = "Get document information for current meeting";
+	private static final String DOWNLOAD = "Download";
+	private static final String DOWNLOAD_TOOL_TIP_TEXT = "Download files for current meeting";
 	private static final String EXPORT = "Export";
 	private static final String EXPORT_TOOL_TIP_TEXT = "Export entries to an Excel file";
-	private static final String ABOUT ="About";
+	private static final String ABOUT = "About";
+	public static final Logger LOGGER = Logger
+			.getLogger("com.drawmetry.docii3gpp");
 
 	private static String[] meetings;
 	// TODO: allow for more than one meeting
 	private String currentMeeting;
 
-	public static final Logger LOGGER = Logger
-			.getLogger("com.drawmetry.docii3gpp");
-
 	private DocEntry currentEntry = null;
 	private boolean syncLock = false;
 	private FilterDialog filterDialog;
 	private List<DocEntry> allEntries;
-	private List<DocEntry> latestEntries;
+//	private List<DocEntry> latestEntries;
 	private Synchronizer synchronizer;
+	private Downloader downLoader;
 
 	private JTextField titleTextField;
 	private JTextField sourceTextField;
@@ -127,7 +130,10 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 
 	private JComboBox<String> meetingComboBox;
 	private JButton synchronizeButton;
+	private JButton downloadButton;
 	private JButton stopButton;
+
+	private JProgressBar downloadProgressBar;
 
 	private class PopupListener extends MouseAdapter {
 
@@ -157,7 +163,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	private DataAccessObject db;
 	/* State */
 	private boolean changed = false; // true when entry needs to be saved
-	private boolean latest = false; // true when only the latest revision is to
+//	private boolean latest = false; // true when only the latest revision is to
 									// appear in the entry list
 	private DocumentListener documentChangeListener = new DocumentListener() {
 		@Override
@@ -175,6 +181,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 			changed = true;
 		}
 	};
+	
 
 	private class DocEntryRenderer extends DefaultListCellRenderer {
 
@@ -215,7 +222,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		setTitle("Docii 3GPP Edition");
 
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-		setMinimumSize(new java.awt.Dimension(1020, 530));
+		setMinimumSize(new Dimension(1020, 530));
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent evt) {
 				formWindowClosing(evt);
@@ -253,9 +260,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		docTabbedPane = new JTabbedPane();
 		JPanel docPanel = new JPanel();
 		docPanel = new JPanel();
-		docPanel.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
-		docPanel.setMinimumSize(new java.awt.Dimension(400, 300));
-		docPanel.setPreferredSize(new java.awt.Dimension(600, 300));
+		docPanel.setFont(new Font("Arial", 0, 18)); // NOI18N
+		docPanel.setMinimumSize(new Dimension(400, 300));
+		docPanel.setPreferredSize(new Dimension(600, 300));
 		docPanel.setLayout(new GridBagLayout());
 
 		JPanel docFieldsPanel = new JPanel();
@@ -266,7 +273,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 
 		// title
 		JLabel titleLabel = new JLabel();
-		titleLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
+		titleLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
 		titleLabel.setText("Title:"); // NOI18N
 		c.anchor = GridBagConstraints.LINE_START;
 		c.gridx = 0;
@@ -287,7 +294,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		// source
 
 		JLabel sourceLabel = new JLabel();
-		sourceLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
+		sourceLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
 		sourceLabel.setText("Source:"); // NOI18N
 		c.gridx = 0;
 		c.gridy = row;
@@ -305,7 +312,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 
 		// agenda title
 		JLabel agendaLabel = new JLabel();
-		agendaLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
+		agendaLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
 		agendaLabel.setText("Agenda:"); // NOI18N
 		c.gridx = 0;
 		c.gridy = row;
@@ -324,7 +331,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 
 		// work item
 		JLabel workItemLabel = new JLabel();
-		workItemLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
+		workItemLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
 		workItemLabel.setText("Work Item:"); // NOI18N
 		c.gridx = 0;
 		c.gridy = row;
@@ -343,7 +350,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 
 		// comment
 		JLabel commentLabel = new JLabel();
-		commentLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
+		commentLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
 		commentLabel.setText("Comment:"); // NOI18N
 		c.gridx = 0;
 		c.gridy = row;
@@ -362,10 +369,11 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 
 		// revised by / revision of
 		JLabel revLabel = new JLabel();
-		revLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
-		revLabel.setText("Rev from/to:"); // NOI18N
+		revLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
+		revLabel.setText("Rev from / to:"); // NOI18N
 		c.gridx = 0;
 		c.gridy = row;
+		c.gridwidth = 1;
 		c.weightx = 0.0;
 		c.insets = insets;
 		docFieldsPanel.add(revLabel, c);
@@ -389,7 +397,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 
 		// decision
 		JLabel decisionLabel = new JLabel();
-		decisionLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
+		decisionLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
 		decisionLabel.setText("Decision:"); // NOI18N
 		c.gridx = 0;
 		c.gridy = row;
@@ -438,8 +446,8 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 
 		outputScrollPane
 				.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		outputScrollPane.setMaximumSize(new java.awt.Dimension(32767, 50));
-		outputScrollPane.setMinimumSize(new java.awt.Dimension(23, 50));
+		outputScrollPane.setMaximumSize(new Dimension(32767, 50));
+		outputScrollPane.setMinimumSize(new Dimension(23, 50));
 
 		outputArea.setColumns(20);
 		outputArea.setEditable(false);
@@ -452,6 +460,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		mainSplitPane.setRightComponent(subSplitPane);
 
 		add(mainSplitPane, BorderLayout.CENTER);
+
+		downloadProgressBar = new JProgressBar();
+		add(downloadProgressBar, BorderLayout.SOUTH);
 
 		pack();
 
@@ -468,7 +479,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		documentList.setToolTipText("Doble-click to open document"); // NOI18N
 		documentList.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent evt) {
-				documentListMouseClicked(evt);
+				if (evt.getClickCount() == 2) {
+					openCurrentDocument();
+				}
 			}
 		});
 		documentList.addListSelectionListener(new ListSelectionListener() {
@@ -623,16 +636,16 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		toolBar.add(meetingComboBox);
 
 		JButton filterButton = new JButton();
-		filterButton.setFont(new java.awt.Font("SansSerif", 0, 12)); // NOI18N
+		filterButton.setFont(new Font("SansSerif", 0, 12)); // NOI18N
 		filterButton.setText(FILTER + "...");
 		filterButton.setToolTipText(FILTER_TOOL_TIP_TEXT);
 		filterButton.setBorder(BorderFactory
 				.createBevelBorder(BevelBorder.RAISED));
 		filterButton.setFocusable(false);
 		filterButton.setHorizontalTextPosition(SwingConstants.CENTER);
-		filterButton.setMaximumSize(new java.awt.Dimension(200, 21));
-		filterButton.setMinimumSize(new java.awt.Dimension(80, 21));
-		filterButton.setPreferredSize(new java.awt.Dimension(80, 21));
+		filterButton.setMaximumSize(new Dimension(200, 21));
+		filterButton.setMinimumSize(new Dimension(80, 21));
+		filterButton.setPreferredSize(new Dimension(80, 21));
 		filterButton.setVerticalTextPosition(SwingConstants.BOTTOM);
 		filterButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
@@ -642,16 +655,16 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		toolBar.add(filterButton);
 
 		synchronizeButton = new JButton();
-		synchronizeButton.setFont(new java.awt.Font("SansSerif", 0, 12)); // NOI18N
+		synchronizeButton.setFont(new Font("SansSerif", 0, 12)); // NOI18N
 		synchronizeButton.setText(SYNCHRONIZE);
 		synchronizeButton.setToolTipText(SYNCHRONIZE_TOOL_TIP_TEXT);
 		synchronizeButton.setBorder(BorderFactory
 				.createBevelBorder(BevelBorder.RAISED));
 		synchronizeButton.setFocusable(false);
 		synchronizeButton.setHorizontalTextPosition(SwingConstants.CENTER);
-		synchronizeButton.setMaximumSize(new java.awt.Dimension(200, 21));
-		synchronizeButton.setMinimumSize(new java.awt.Dimension(80, 21));
-		synchronizeButton.setPreferredSize(new java.awt.Dimension(80, 21));
+		synchronizeButton.setMaximumSize(new Dimension(200, 21));
+		synchronizeButton.setMinimumSize(new Dimension(80, 21));
+		synchronizeButton.setPreferredSize(new Dimension(80, 21));
 		synchronizeButton.setVerticalTextPosition(SwingConstants.BOTTOM);
 		synchronizeButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
@@ -660,17 +673,36 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		});
 		toolBar.add(synchronizeButton);
 
+		downloadButton = new JButton();
+		downloadButton.setFont(new Font("SansSerif", 0, 12)); // NOI18N
+		downloadButton.setText(DOWNLOAD);
+		downloadButton.setToolTipText(DOWNLOAD_TOOL_TIP_TEXT);
+		downloadButton.setBorder(BorderFactory
+				.createBevelBorder(BevelBorder.RAISED));
+		downloadButton.setFocusable(false);
+		downloadButton.setHorizontalTextPosition(SwingConstants.CENTER);
+		downloadButton.setMaximumSize(new Dimension(200, 21));
+		downloadButton.setMinimumSize(new Dimension(80, 21));
+		downloadButton.setPreferredSize(new Dimension(80, 21));
+		downloadButton.setVerticalTextPosition(SwingConstants.BOTTOM);
+		downloadButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				downloadButtonActionPerformed(evt);
+			}
+		});
+		toolBar.add(downloadButton);
+
 		JButton exportButton = new JButton();
-		exportButton.setFont(new java.awt.Font("SansSerif", 0, 12)); // NOI18N
+		exportButton.setFont(new Font("SansSerif", 0, 12)); // NOI18N
 		exportButton.setText(EXPORT);
 		exportButton.setToolTipText(EXPORT_TOOL_TIP_TEXT);
 		exportButton.setBorder(BorderFactory
 				.createBevelBorder(BevelBorder.RAISED));
 		exportButton.setFocusable(false);
 		exportButton.setHorizontalTextPosition(SwingConstants.CENTER);
-		exportButton.setMaximumSize(new java.awt.Dimension(200, 21));
-		exportButton.setMinimumSize(new java.awt.Dimension(80, 21));
-		exportButton.setPreferredSize(new java.awt.Dimension(80, 21));
+		exportButton.setMaximumSize(new Dimension(200, 21));
+		exportButton.setMinimumSize(new Dimension(80, 21));
+		exportButton.setPreferredSize(new Dimension(80, 21));
 		exportButton.setVerticalTextPosition(SwingConstants.BOTTOM);
 		exportButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
@@ -684,9 +716,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 				"/com/drawmetry/docii3gpp/images/stop2_32.png"))); // NOI18N
 		stopButton.setBorder(null);
 		stopButton.setIconTextGap(0);
-		stopButton.setMaximumSize(new java.awt.Dimension(32, 22));
-		stopButton.setMinimumSize(new java.awt.Dimension(32, 22));
-		stopButton.setPreferredSize(new java.awt.Dimension(32, 22));
+		stopButton.setMaximumSize(new Dimension(32, 22));
+		stopButton.setMinimumSize(new Dimension(32, 22));
+		stopButton.setPreferredSize(new Dimension(32, 22));
 		stopButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
 				stopButtonActionPerformed(evt);
@@ -789,13 +821,6 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		getDb().disconnect();
 	}
 
-	private void documentListMouseClicked(MouseEvent evt) {
-		if (evt.getClickCount() != 2) {
-			return;
-		}
-		openCurrentDocument();
-	}
-
 	private void openCurrentDocument() {
 		if (currentEntry == null) {
 			return;
@@ -806,6 +831,16 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		String fileName = docObj.getTDoc();
 		assert fileName != null;
 		File file = Configuration.getLocalFile(currentMeeting, fileName);
+		if (!file.exists()) {
+			int answer = JOptionPane.showConfirmDialog(this,
+					"File not found locally. Download now?", "Download",
+					JOptionPane.YES_NO_OPTION);
+			if (answer == JOptionPane.YES_OPTION) {
+				Downloader dl = new Downloader(this);
+				dl.downloadNow(docObj);
+				documentList.repaint();
+			}
+		}
 		if (file.exists()) {
 			try {
 				file = file.getCanonicalFile();
@@ -848,6 +883,16 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		updateDocumentList();
 	}
 
+	private void downloadButtonActionPerformed(ActionEvent evt) {
+		if (!isSyncLock()) {
+			setSyncLock(true);
+			downLoader = new Downloader(this);
+			Thread downloadThread = new Thread(downLoader);
+			downloadThread.start();
+			stopButton.setEnabled(true);
+		}
+	}
+
 	private void exportButtonActionPerformed(ActionEvent evt) {
 
 		FileOutputStream fileOut = null;
@@ -886,6 +931,10 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	private void stopButtonActionPerformed(ActionEvent evt) {
 		if (isSyncLock()) {
 			stopButton.setEnabled(false);
+			if (downLoader != null) {
+                downLoader.setAbort(true);
+				downloadButton.setEnabled(false);
+            }
 			if (synchronizer != null) {
 				synchronizer.setAbort(true);
 				synchronizeButton.setEnabled(false);
@@ -901,9 +950,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 			if (currentEntry != null) {
 				db.deleteRecord(getTable(), currentEntry.getId());
 				allEntries.remove(currentEntry);
-				if (latestEntries != null) {
-					latestEntries.remove(currentEntry);
-				}
+//				if (latestEntries != null) {
+//					latestEntries.remove(currentEntry);
+//				}
 				updateDocumentList();
 			}
 		}
@@ -1009,10 +1058,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 						try {
 							Desktop.getDesktop().browse(e.getURL().toURI());
 						} catch (Exception ex) {
-							LOGGER.log(Level.SEVERE, "Cannot fond the browser");
+							LOGGER.log(Level.SEVERE, "Cannot find the browser");
 						}
 					}
-					// System.out.println("Go to URL: " + e.getURL());
 				}
 			}
 		});
@@ -1059,7 +1107,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 			return;
 		}
 		refreshListEntries();
-		List<DocEntry> modelEntries = latest ? latestEntries : allEntries;
+		List<DocEntry> modelEntries = allEntries;
 		if (id != -1) {
 			for (int index = 0; index < modelEntries.size(); index++) {
 				if (modelEntries.get(index).getId() == id) {
@@ -1072,30 +1120,25 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	}
 
 	private void refreshListEntries() {
-		if (allEntries == null) {
-			System.out.println("Stop!");
-		}
-		if (!latest) {
-			DocEntry[] data = allEntries.toArray(new DocEntry[0]);
-			documentList.setListData(data);
-			return;
-		}
-		latestEntries = new ArrayList<DocEntry>(allEntries.size());
-		DocEntry prevEntry = null;
-		for (DocEntry entry : allEntries) {
-			int i = entry.compare(prevEntry);
-			if (prevEntry == null || i > 0) {
-				prevEntry = entry;
-			} else if (i == 0) {
-				latestEntries.add(prevEntry);
-				prevEntry = entry;
-			}
-		}
-		if (prevEntry != null) {
-			latestEntries.add(prevEntry);
-		}
-		DocEntry[] data = latestEntries.toArray(new DocEntry[0]);
+		DocEntry[] data = allEntries.toArray(new DocEntry[0]);
 		documentList.setListData(data);
+		// return;
+		// latestEntries = new ArrayList<DocEntry>(allEntries.size());
+		// DocEntry prevEntry = null;
+		// for (DocEntry entry : allEntries) {
+		// int i = entry.compare(prevEntry);
+		// if (prevEntry == null || i > 0) {
+		// prevEntry = entry;
+		// } else if (i == 0) {
+		// latestEntries.add(prevEntry);
+		// prevEntry = entry;
+		// }
+		// }
+		// if (prevEntry != null) {
+		// latestEntries.add(prevEntry);
+		// }
+		// DocEntry[] data = latestEntries.toArray(new DocEntry[0]);
+		// documentList.setListData(data);
 
 	}
 
@@ -1207,6 +1250,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	public void setSyncLock(boolean lock) {
 
 		synchronizeButton.setEnabled(!lock);
+		downloadButton.setEnabled(!lock);
 		stopButton.setEnabled(lock);
 		this.syncLock = lock;
 		if (!lock) {
@@ -1216,7 +1260,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	}
 
 	public List<DocumentObject> getDocsToDownload() {
-		List<DocEntry> entries = latest ? latestEntries : allEntries;
+		List<DocEntry> entries = allEntries;
 		List<DocumentObject> docs = new ArrayList<DocumentObject>(
 				entries.size());
 		for (DocEntry e : entries) {
@@ -1224,13 +1268,13 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		}
 		return docs;
 	}
-
+	
 	public String getTable() {
 		return Configuration.getTables()[0];
 	}
 
 	public DocEntry[] getEntries() {
-		return (latest ? latestEntries : allEntries).toArray(new DocEntry[0]);
+		return allEntries.toArray(new DocEntry[0]);
 	}
 
 	@Override
@@ -1241,12 +1285,22 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		return currentMeeting;
 	}
 
-	private void meetingComboBoxActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_workingGroupComboBoxActionPerformed
+	private void meetingComboBoxActionPerformed(ActionEvent evt) {// GEN-FIRST:event_workingGroupComboBoxActionPerformed
 		if (changed && currentEntry != null) {
 			save(currentEntry);
 		}
 		documentList.clearSelection();
 		int i = meetingComboBox.getSelectedIndex();
 		selectMeeting(i);
+	}
+
+	public void setDownloadProgress(final int progress) {
+
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				downloadProgressBar.setValue(progress);
+			}
+		});
 	}
 }

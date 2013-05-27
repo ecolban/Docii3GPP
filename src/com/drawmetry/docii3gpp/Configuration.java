@@ -39,6 +39,7 @@ public class Configuration extends DefaultHandler {
 	private String schema;
 	private File systemHome;
 	private File localFilesRoot;
+	private String host;
 	private static Configuration instance;
 	private String database;
 	private String tDocTable;
@@ -58,12 +59,17 @@ public class Configuration extends DefaultHandler {
 
 	private class Meeting {
 		private final URL tDocUrl;
-		private final File directory;
+		private final File localDirectory;
+		private final String remoteDir;
+		private final String remoteDirAlt;
 
-		private Meeting(URL tDocUrl, File directory)
-				throws MalformedURLException {
+		private Meeting(URL tDocUrl, String localDir, String remoteDir,
+				String remoteDirAlt) throws MalformedURLException {
+			File localDirectory = new File(localFilesRoot, localDir);
 			this.tDocUrl = tDocUrl;
-			this.directory = directory;
+			this.localDirectory = localDirectory;
+			this.remoteDir = remoteDir;
+			this.remoteDirAlt = remoteDirAlt;
 		}
 
 	}
@@ -147,6 +153,10 @@ public class Configuration extends DefaultHandler {
 		return new String[] { instance.tDocTable };
 	}
 
+	public static String getHost() {
+		return instance.host;
+	}
+
 	/**
 	 * Gets the database properties
 	 * 
@@ -166,15 +176,26 @@ public class Configuration extends DefaultHandler {
 
 	public static String[] getMeetings() {
 		String[] a = new String[0];
-		List<String> list = new ArrayList<String>(Configuration.meetings.keySet());
+		List<String> list = new ArrayList<String>(
+				Configuration.meetings.keySet());
 		Collections.sort(list);
 		Collections.reverse(list);
 		return list.toArray(a);
 	}
 
-	public static File getDirectory(String meetingName) {
+	public static File getLocalDirectory(String meetingName) {
 
-		return Configuration.meetings.get(meetingName).directory;
+		return Configuration.meetings.get(meetingName).localDirectory;
+	}
+
+	public static String getRemoteDirectory(String meetingName) {
+
+		return Configuration.meetings.get(meetingName).remoteDir;
+	}
+
+	public static String getRemoteDirectoryAlt(String meetingName) {
+
+		return Configuration.meetings.get(meetingName).remoteDirAlt;
 	}
 
 	public static URL getTDocList(String meetingName) {
@@ -182,8 +203,8 @@ public class Configuration extends DefaultHandler {
 	}
 
 	public static File getLocalFile(String meeting, String fileName) {
-		return new File(Configuration.meetings.get(meeting).directory, fileName
-				+ ".zip");
+		return new File(Configuration.meetings.get(meeting).localDirectory,
+				fileName + ".zip");
 	}
 
 	private void parseDocument() {
@@ -221,6 +242,8 @@ public class Configuration extends DefaultHandler {
 			startDerby(atts);
 		} else if (qName.equalsIgnoreCase("localfiles")) {
 			startLocalFiles(atts);
+		} else if (qName.equalsIgnoreCase("remote")) {
+			startRemote(atts);
 		} else if (qName.equalsIgnoreCase("meeting")) {
 			startMeeting(atts);
 		} else if (qName.equalsIgnoreCase("table")) {
@@ -303,28 +326,45 @@ public class Configuration extends DefaultHandler {
 		}
 	}
 
+	private void startRemote(Attributes atts) throws SAXException {
+		for (int i = 0; i < atts.getLength(); i++) {
+			if (atts.getQName(i).equalsIgnoreCase("host")) {
+				host = atts.getValue(i);
+			}
+		}
+	}
+
 	private void startMeeting(Attributes atts) throws SAXException {
 		if (localFilesRoot == null) {
 			throw new SAXException("No root");
 		}
 		String meetingName = null;
 		String urlString = null;
-		String dir = null;
+		String localDir = null;
+		String remoteDir = null;
+		String remoteDirAlt = null;
 		for (int i = 0; i < atts.getLength(); i++) {
 			if (atts.getQName(i).equalsIgnoreCase("name")) {
 				meetingName = atts.getValue(i);
 			} else if (atts.getQName(i).equalsIgnoreCase("tdoclist")) {
 				urlString = atts.getValue(i);
-			} else if (atts.getQName(i).equalsIgnoreCase("dir")) {
-				dir = atts.getValue(i);
+			} else if (atts.getQName(i).equalsIgnoreCase("localdir")) {
+				localDir = atts.getValue(i);
+			} else if (atts.getQName(i).equalsIgnoreCase("remotedir")) {
+				remoteDir = atts.getValue(i);
+			} else if (atts.getQName(i).equalsIgnoreCase("remotedir_alt")) {
+				remoteDirAlt = atts.getValue(i);
 			}
 		}
-		if (meetingName != null && urlString != null && dir != null) {
+		if (localDir == null) {
+			localDir = remoteDir;
+		}
+		if (meetingName != null && urlString != null && remoteDir != null) {
 			try {
 				URL url = new URL(urlString);
-				File directory = new File(localFilesRoot, dir);
+//				File localDirectory = new File(localFilesRoot, localDir);
 				Configuration.meetings.put(meetingName, new Meeting(url,
-						directory));
+						localDir, remoteDir, remoteDirAlt));
 			} catch (MalformedURLException e) {
 				LOGGER.log(Level.SEVERE, e.getMessage());
 			}

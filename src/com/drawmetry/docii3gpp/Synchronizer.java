@@ -23,14 +23,9 @@ public class Synchronizer implements Runnable {
 	private final UI ui;
 	private final URL hostUrl;
 	private boolean abortFlag = false;
-	private static final ResourceBundle messageBundle = ResourceBundle
-			.getBundle("com/drawmetry/docii3gpp/resources/MessageBundle");
-	private static final String STARTING_SYNC = messageBundle
-			.getString("STARTING SYNC");
-	private static final String SYNC_ABORTED = messageBundle
-			.getString("SYNC ABORTED");
-	private static final String SYNC_COMPLETE = messageBundle
-			.getString("SYNC COMPLETE");
+	private static final String STARTING_SYNC = "Starting sync";
+	private static final String SYNC_ABORTED = "Sync aborted";
+	private static final String SYNC_COMPLETE = "Syn complete";
 	static final Logger LOGGER = Logger.getLogger("com.drawmetry.docii3gpp");
 	
 	public Synchronizer(UI ui, URL hostUrl) {
@@ -43,8 +38,8 @@ public class Synchronizer implements Runnable {
 	public void run() {
 		LOGGER.log(Level.INFO, String.format("%s\n", STARTING_SYNC));
 		try {
-			S2PageHandler_1 handler = new S2PageHandler_1(ui);
-//			S2PageHandler_2 handler = new S2PageHandler_2(ui);
+//			S2PageHandler_1 handler = new S2PageHandler_1(ui);
+			S2PageHandler_2 handler = new S2PageHandler_2(ui);
 //			R2PageHandler handler = new R2PageHandler(ui);
 			URLConnection con = (URLConnection) hostUrl
 					.openConnection();
@@ -53,7 +48,6 @@ public class Synchronizer implements Runnable {
 
 			String line = null;
 			while ((line = input.readLine()) != null) {
-//				System.out.println(line);
 				handler.readLine(line);
 			}
 
