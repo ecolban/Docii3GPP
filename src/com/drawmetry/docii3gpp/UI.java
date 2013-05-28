@@ -1,6 +1,7 @@
 package com.drawmetry.docii3gpp;
 
 import com.drawmetry.docii3gpp.database.DataAccessObject;
+import com.inet.jortho.SpellChecker;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -111,7 +112,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	private boolean syncLock = false;
 	private FilterDialog filterDialog;
 	private List<DocEntry> allEntries;
-//	private List<DocEntry> latestEntries;
+	// private List<DocEntry> latestEntries;
 	private Synchronizer synchronizer;
 	private Downloader downLoader;
 
@@ -163,8 +164,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	private DataAccessObject db;
 	/* State */
 	private boolean changed = false; // true when entry needs to be saved
-//	private boolean latest = false; // true when only the latest revision is to
-									// appear in the entry list
+	// private boolean latest = false; // true when only the latest revision is
+	// to
+	// appear in the entry list
 	private DocumentListener documentChangeListener = new DocumentListener() {
 		@Override
 		public void insertUpdate(DocumentEvent e) {
@@ -181,7 +183,6 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 			changed = true;
 		}
 	};
-	
 
 	private class DocEntryRenderer extends DefaultListCellRenderer {
 
@@ -429,6 +430,10 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		notesArea.setRows(7);
 		notesArea.setToolTipText("Notes"); // NOI18N
 		notesArea.setWrapStyleWord(true);
+		URL url = UI.class.getResource("dict/");
+		SpellChecker.registerDictionaries(url, "en", null, ".ortho");
+		SpellChecker.register(notesArea);
+
 		notesScrollPane.setViewportView(notesArea);
 
 		c.gridx = 0;
@@ -932,9 +937,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		if (isSyncLock()) {
 			stopButton.setEnabled(false);
 			if (downLoader != null) {
-                downLoader.setAbort(true);
+				downLoader.setAbort(true);
 				downloadButton.setEnabled(false);
-            }
+			}
 			if (synchronizer != null) {
 				synchronizer.setAbort(true);
 				synchronizeButton.setEnabled(false);
@@ -950,9 +955,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 			if (currentEntry != null) {
 				db.deleteRecord(getTable(), currentEntry.getId());
 				allEntries.remove(currentEntry);
-//				if (latestEntries != null) {
-//					latestEntries.remove(currentEntry);
-//				}
+				// if (latestEntries != null) {
+				// latestEntries.remove(currentEntry);
+				// }
 				updateDocumentList();
 			}
 		}
@@ -1268,7 +1273,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		}
 		return docs;
 	}
-	
+
 	public String getTable() {
 		return Configuration.getTables()[0];
 	}

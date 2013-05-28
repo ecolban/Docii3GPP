@@ -136,7 +136,7 @@ public class Downloader implements Runnable {
 		BufferedOutputStream outputStream = null;
 		long contentLength = remoteFile.getSize();
 		try {
-			inputStream = client.retrieveFileStream(remoteDir
+			inputStream = client.retrieveFileStream(remoteDir + "/"
 					+ remoteFile.getName());
 			if (inputStream == null) {
 				UI.LOGGER.log(Level.WARNING,
