@@ -94,7 +94,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	private static final String DATABASE_URL = "Database URL";
 	private static final String FILTER = "Search";
 	private static final String FILTER_TOOL_TIP_TEXT = "Narrow down the selection";
-	private static final String SYNCHRONIZE = "Synchronize";
+	private static final String SYNCHRONIZE = "Sync metadata";
 	private static final String SYNCHRONIZE_TOOL_TIP_TEXT = "Get document information for current meeting";
 	private static final String DOWNLOAD = "Download";
 	private static final String DOWNLOAD_TOOL_TIP_TEXT = "Download files for current meeting";
@@ -105,7 +105,6 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 			.getLogger("com.drawmetry.docii3gpp");
 
 	private static String[] meetings;
-	// TODO: allow for more than one meeting
 	private String currentMeeting;
 
 	private DocEntry currentEntry = null;

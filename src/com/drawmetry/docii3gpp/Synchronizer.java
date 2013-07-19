@@ -40,7 +40,8 @@ public class Synchronizer implements Runnable {
 		try {
 //			S2PageHandler_1 handler = new S2PageHandler_1(ui);
 			S2PageHandler_2 handler = new S2PageHandler_2(ui);
-//			R2PageHandler handler = new R2PageHandler(ui);
+//			SPPageHandler_58 handler = new SPPageHandler_58(ui);
+			//			R2PageHandler handler = new R2PageHandler(ui);
 			URLConnection con = (URLConnection) hostUrl
 					.openConnection();
 			BufferedReader input = new BufferedReader(new InputStreamReader(

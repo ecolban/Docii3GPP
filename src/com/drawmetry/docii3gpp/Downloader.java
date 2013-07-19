@@ -10,6 +10,8 @@ import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 
 import javax.swing.SwingUtilities;
@@ -66,9 +68,11 @@ public class Downloader implements Runnable {
 			client.enterLocalPassiveMode();
 			client.setFileType(FTP.BINARY_FILE_TYPE);
 			String remoteDir = Configuration.getRemoteDirectory(meeting);
+			UI.LOGGER.log(Level.INFO, "From Docs folder:\n");
 			downloadFiles(client, localDir, remoteDir);
 			remoteDir = Configuration.getRemoteDirectoryAlt(meeting);
 			if (remoteDir != null) {
+				UI.LOGGER.log(Level.INFO, "From Inbox folder:\n");
 				downloadFiles(client, localDir, remoteDir);
 			}
 			client.logout();
@@ -90,27 +94,27 @@ public class Downloader implements Runnable {
 	private void downloadFiles(FTPClient client, File localDir, String remoteDir)
 			throws IOException {
 		FTPFile[] files = client.listFiles(remoteDir);
-		int missingFiles = 0;
+		List<FTPFile> missingFiles = new ArrayList<FTPFile>();
+		int count = 0;
 		for (FTPFile remoteFile : files) {
 			if (remoteFile.isFile()) {
 				File localFile = new File(localDir, remoteFile.getName());
 				if (!localFile.exists()) {
-					missingFiles++;
+					count++;
+					missingFiles.add(remoteFile);
 				}
 			}
 		}
-		for (FTPFile remoteFile : files) {
+		for (FTPFile remoteFile : missingFiles) {
 			if (isAborted()) {
 				break;
 			}
 			if (remoteFile.isFile()) {
 				File localFile = new File(localDir, remoteFile.getName());
-				if (!localFile.exists()) {
-					UI.LOGGER.log(Level.INFO, "[{0}]", missingFiles);
-					downloadFile(client, localFile, remoteFile, remoteDir);
-					missingFiles--;
-					gui.repaint();
-				}
+				UI.LOGGER.log(Level.INFO, "[{0}]", count);
+				downloadFile(client, localFile, remoteFile, remoteDir);
+				count--;
+				gui.repaint();
 			}
 		}
 	}

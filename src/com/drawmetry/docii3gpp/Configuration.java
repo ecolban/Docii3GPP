@@ -44,6 +44,7 @@ public class Configuration extends DefaultHandler {
 	private String database;
 	private String tDocTable;
 	private static Map<String, Meeting> meetings = new HashMap<String, Meeting>();
+	private static List<String> meetingNames = new ArrayList<String>();
 	public static final Logger LOGGER = Logger
 			.getLogger("com.drawmetry.docii3gpp");
 
@@ -176,11 +177,11 @@ public class Configuration extends DefaultHandler {
 
 	public static String[] getMeetings() {
 		String[] a = new String[0];
-		List<String> list = new ArrayList<String>(
-				Configuration.meetings.keySet());
-		Collections.sort(list);
-		Collections.reverse(list);
-		return list.toArray(a);
+//		List<String> list = new ArrayList<String>(
+//				Configuration.meetings.keySet());
+//		Collections.sort(list);
+//		Collections.reverse(list);
+		return meetingNames.toArray(a);
 	}
 
 	public static File getLocalDirectory(String meetingName) {
@@ -365,6 +366,7 @@ public class Configuration extends DefaultHandler {
 //				File localDirectory = new File(localFilesRoot, localDir);
 				Configuration.meetings.put(meetingName, new Meeting(url,
 						localDir, remoteDir, remoteDirAlt));
+				Configuration.meetingNames.add(meetingName);
 			} catch (MalformedURLException e) {
 				LOGGER.log(Level.SEVERE, e.getMessage());
 			}

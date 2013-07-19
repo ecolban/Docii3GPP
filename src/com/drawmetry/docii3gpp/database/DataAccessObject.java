@@ -417,6 +417,7 @@ public class DataAccessObject {
 			ResultSet results = stmtSaveNewRecord[index].getGeneratedKeys();
 			if (results.next()) {
 				id = results.getInt(1);
+				UI.LOGGER.log(Level.INFO, "{0} added.\n", record.getTDoc());
 			}
 		} catch (SQLException sqle) {
 			printSQLException(sqle);
