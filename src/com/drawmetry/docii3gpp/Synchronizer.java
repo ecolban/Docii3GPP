@@ -7,15 +7,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.SocketException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.SwingUtilities;
+
+import com.drawmetry.docii3gpp.pagehandler.*;
 
 /**
  * 
@@ -30,7 +30,7 @@ public class Synchronizer implements Runnable {
 	private static final String STARTING_SYNC = "Starting sync";
 	private static final String SYNC_ABORTED = "Sync aborted";
 	private static final String SYNC_COMPLETE = "Syn complete";
-	static final Logger LOGGER = Logger.getLogger("com.drawmetry.docii3gpp");
+	public static final Logger LOGGER = Logger.getLogger("com.drawmetry.docii3gpp");
 
 	public Synchronizer(UI ui, URL hostUrl) {
 		this.ui = ui;
@@ -44,13 +44,12 @@ public class Synchronizer implements Runnable {
 			// S2PageHandler_1 handler = new S2PageHandler_1(ui);
 			// S2PageHandler_96 handler = new S2PageHandler_96(ui);
 			// SPPageHandler_58 handler = new SPPageHandler_58(ui);
-			// R2PageHandler handler = new R2PageHandler(ui);
-			RanPageHandler_60 handler = new RanPageHandler_60(ui);
+			R2PageHandler_81 handler = new R2PageHandler_81(ui);
 			BufferedReader input = null;
-			if (hostUrl.getAuthority() == null) { // Case where the input is a local file
+			if (hostUrl.getAuthority() == null) { // case where the input is a local file
 				File file = new File(hostUrl.toURI());
 				input = new BufferedReader(new FileReader(file));
-			} else { // case where rge input is a file on an ftp server (e.g. ftp.3gpp.org).
+			} else { // case where the input is a file on an ftp server (e.g. ftp.3gpp.org).
 				URLConnection con = (URLConnection) hostUrl.openConnection();
 				input = new BufferedReader(new InputStreamReader(
 						con.getInputStream()));

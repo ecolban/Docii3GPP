@@ -1,7 +1,11 @@
-package com.drawmetry.docii3gpp;
+package com.drawmetry.docii3gpp.pagehandler;
 
 import com.drawmetry.docii3gpp.database.DataAccessObject;
+import com.drawmetry.docii3gpp.Configuration;
 import com.drawmetry.docii3gpp.DocEntry;
+import com.drawmetry.docii3gpp.DocumentObject;
+import com.drawmetry.docii3gpp.Synchronizer;
+import com.drawmetry.docii3gpp.UI;
 
 import java.net.MalformedURLException;
 import java.util.List;

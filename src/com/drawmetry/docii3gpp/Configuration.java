@@ -43,7 +43,6 @@ public class Configuration extends DefaultHandler {
 	private static Configuration instance;
 	private String database;
 	private String tDocTable;
-	private String ftpPrefix;
 	private static Map<String, Meeting> meetings = new HashMap<String, Meeting>();
 	private static List<String> meetingNames = new ArrayList<String>();
 	public static final Logger LOGGER = Logger
@@ -64,14 +63,17 @@ public class Configuration extends DefaultHandler {
 		private final File localDirectory;
 		private final String remoteDir;
 		private final String remoteDirAlt;
+		private final String ftpPrefix;
 
 		private Meeting(URL tDocUrl, String localDir, String remoteDir,
-				String remoteDirAlt) throws MalformedURLException {
+				String remoteDirAlt, String ftpPrefix)
+				throws MalformedURLException {
 			File localDirectory = new File(localFilesRoot, localDir);
 			this.tDocUrl = tDocUrl;
 			this.localDirectory = localDirectory;
 			this.remoteDir = remoteDir;
 			this.remoteDirAlt = remoteDirAlt;
+			this.ftpPrefix = ftpPrefix;
 		}
 
 	}
@@ -178,10 +180,10 @@ public class Configuration extends DefaultHandler {
 
 	public static String[] getMeetings() {
 		String[] a = new String[0];
-//		List<String> list = new ArrayList<String>(
-//				Configuration.meetings.keySet());
-//		Collections.sort(list);
-//		Collections.reverse(list);
+		// List<String> list = new ArrayList<String>(
+		// Configuration.meetings.keySet());
+		// Collections.sort(list);
+		// Collections.reverse(list);
 		return meetingNames.toArray(a);
 	}
 
@@ -207,6 +209,10 @@ public class Configuration extends DefaultHandler {
 	public static File getLocalFile(String meeting, String fileName) {
 		return new File(Configuration.meetings.get(meeting).localDirectory,
 				fileName + ".zip");
+	}
+
+	public static String getFtpPrefix(String meetingName) {
+		return Configuration.meetings.get(meetingName).ftpPrefix;
 	}
 
 	private void parseDocument() {
@@ -345,6 +351,7 @@ public class Configuration extends DefaultHandler {
 		String localDir = null;
 		String remoteDir = null;
 		String remoteDirAlt = null;
+		String ftpPrefix = null;
 		for (int i = 0; i < atts.getLength(); i++) {
 			if (atts.getQName(i).equalsIgnoreCase("name")) {
 				meetingName = atts.getValue(i);
@@ -366,9 +373,9 @@ public class Configuration extends DefaultHandler {
 		if (meetingName != null && urlString != null && remoteDir != null) {
 			try {
 				URL url = new URL(urlString);
-//				File localDirectory = new File(localFilesRoot, localDir);
+				// File localDirectory = new File(localFilesRoot, localDir);
 				Configuration.meetings.put(meetingName, new Meeting(url,
-						localDir, remoteDir, remoteDirAlt));
+						localDir, remoteDir, remoteDirAlt, ftpPrefix));
 				Configuration.meetingNames.add(meetingName);
 			} catch (MalformedURLException e) {
 				LOGGER.log(Level.SEVERE, e.getMessage());
@@ -384,11 +391,6 @@ public class Configuration extends DefaultHandler {
 			}
 		}
 
-	}
-
-	public static String getFtpPrefix() {
-		return "ftp://ftp.3gpp.org/tsg_ran/TSG_RAN/TSGR_61/Docs/";
-//		return instance.ftpPrefix;
 	}
 
 }

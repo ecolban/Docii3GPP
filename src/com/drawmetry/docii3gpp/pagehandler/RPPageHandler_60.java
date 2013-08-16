@@ -1,5 +1,10 @@
-package com.drawmetry.docii3gpp;
+package com.drawmetry.docii3gpp.pagehandler;
 
+import com.drawmetry.docii3gpp.Configuration;
+import com.drawmetry.docii3gpp.DocEntry;
+import com.drawmetry.docii3gpp.DocumentObject;
+import com.drawmetry.docii3gpp.Synchronizer;
+import com.drawmetry.docii3gpp.UI;
 import com.drawmetry.docii3gpp.database.DataAccessObject;
 
 import java.net.MalformedURLException;
@@ -17,15 +22,8 @@ import java.util.regex.Pattern;
  * @author Erik Colban &copy; 2013 <br>
  *         All Rights Reserved Worldwide
  */
-public class RanPageHandler_60 {
+public class RPPageHandler_60 {
 
-	// private static final Pattern TDOC_PATTERN = Pattern
-	// .compile("(<a .* href=\"(.*\\.zip)\">)?([CGRS][1-5P]-\\d{6})(</a>)?");
-
-	/*
-	 * Available,Late,status,Flag,Agenda item,Tdoc,Title,Source,Type,Spec,"CR #
-	 * or LS link",rev,cat,Release,SI/WI,further information,related Tdoc
-	 */
 	private static final int DECISION_COLUMN = 1;
 	private static final int AGENDA_ITEM_COLUMN = 3;
 	private static final int TDOC_COLUMN = 4;
@@ -48,11 +46,8 @@ public class RanPageHandler_60 {
 
 	private final DataAccessObject db;
 	private final String meeting;
-	private String table = Configuration.getTables()[0];
-
-	// private String ftpPrefix =
-	// "ftp://ftp.3gpp.org/tsg_ran/TSG_RAN/TSGR_61/Docs/";
-	private String ftpPrefix = Configuration.getFtpPrefix();
+	private final String table;
+	private final String ftpPrefix;
 
 	/**
 	 * Constructor
@@ -62,12 +57,21 @@ public class RanPageHandler_60 {
 	 *            information needed.
 	 * 
 	 */
-	public RanPageHandler_60(UI ui) {
-		this.db = ui.getDb();
+	public RPPageHandler_60(UI ui) {
+		this.table = Configuration.getTables()[0];
 		this.meeting = ui.getMeeting();
+		this.ftpPrefix = Configuration.getFtpPrefix(meeting);
+		this.db = ui.getDb();
 
 	}
 
+	private RPPageHandler_60() {
+		this.table = null;
+		this.ftpPrefix = null;
+		this.db = null;
+		this.meeting = "RAN-60";
+
+	}
 	/**
 	 * Handles one line read from the page.
 	 * 
@@ -97,7 +101,7 @@ public class RanPageHandler_60 {
 
 	private void processEntry(String line) {
 		Matcher lineMatcher = LINE_PATTERN.matcher(line);
-		if (lineMatcher.find()) {
+		if (lineMatcher.lookingAt()) {
 			line = line.substring(lineMatcher.start(), lineMatcher.end());
 			Matcher fieldMatcher = CSV_FIELD_PATTERN.matcher(line);
 			String[] fields = new String[16];
