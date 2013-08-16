@@ -54,7 +54,7 @@ public class DocumentObject {
 	 * Constructor
 	 * 
 	 * @param id
-	 * @param meeting TODO
+	 * @param meeting
 	 * @param agendaItem
 	 * @param agendaTitle
 	 * @param url

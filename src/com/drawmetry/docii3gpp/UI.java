@@ -3,6 +3,7 @@ package com.drawmetry.docii3gpp;
 import com.drawmetry.docii3gpp.database.DataAccessObject;
 import com.inet.jortho.SpellChecker;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -66,6 +67,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.border.BevelBorder;
+import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
@@ -115,11 +117,11 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	private Synchronizer synchronizer;
 	private Downloader downLoader;
 
-	private JTextField titleTextField;
+	private JTextArea titleTextField;
 	private JTextField sourceTextField;
-	private JTextField agendaTitleTextField;
+	private JTextArea agendaTitleTextField;
 	private JTextField workItemTextField;
-	private JTextField commentTextField;
+	private JTextArea commentTextArea;
 	private JTextField revByTextField;
 	private JTextField revOfTextField;
 	private JTextField decisionTextField;
@@ -270,6 +272,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		GridBagConstraints c = new GridBagConstraints();
 		Insets insets = new Insets(5, 5, 5, 5);
 		int row = 0;
+		
+		
+		Border border = BorderFactory.createLineBorder(Color.GRAY);
 
 		// title
 		JLabel titleLabel = new JLabel();
@@ -282,7 +287,11 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		c.insets = insets;
 		docFieldsPanel.add(titleLabel, c);
 
-		titleTextField = new JTextField(40);
+		titleTextField = new JTextArea();
+		titleTextField.setEditable(false);
+		titleTextField.setLineWrap(true);
+		titleTextField.setWrapStyleWord(true);
+		titleTextField.setBorder(border);
 		c.gridx = 1;
 		c.gridy = row;
 		c.weightx = 1.0;
@@ -303,6 +312,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		docFieldsPanel.add(sourceLabel, c);
 
 		sourceTextField = new JTextField(40);
+		sourceTextField.setBorder(border);
+		sourceTextField.setEditable(false);
+		sourceTextField.setBackground(Color.WHITE);
 		c.gridx = 1;
 		c.gridy = row;
 		c.weightx = 1.0;
@@ -320,7 +332,11 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		c.insets = insets;
 		docFieldsPanel.add(agendaLabel, c);
 
-		agendaTitleTextField = new JTextField(40);
+		agendaTitleTextField = new JTextArea();
+		agendaTitleTextField.setEditable(false);
+		agendaTitleTextField.setLineWrap(true);
+		agendaTitleTextField.setWrapStyleWord(true);
+		agendaTitleTextField.setBorder(border);
 		c.gridx = 1;
 		c.gridy = row;
 		c.weightx = 1.0;
@@ -340,6 +356,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		docFieldsPanel.add(workItemLabel, c);
 
 		workItemTextField = new JTextField(40);
+		workItemTextField.setEditable(false);
+		workItemTextField.setBorder(border);
+		workItemTextField.setBackground(Color.WHITE);
 		c.gridx = 1;
 		c.gridy = row;
 		c.weightx = 1.0;
@@ -358,14 +377,18 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		c.insets = insets;
 		docFieldsPanel.add(commentLabel, c);
 
-		commentTextField = new JTextField(40);
+		commentTextArea = new JTextArea();
+		commentTextArea.setEditable(false);
+		commentTextArea.setLineWrap(true);
+		commentTextArea.setWrapStyleWord(true);
+		commentTextArea.setBorder(border);
 		c.gridx = 1;
 		c.gridy = row;
 		c.weightx = 1.0;
 		c.gridwidth = 2;
 		c.fill = GridBagConstraints.HORIZONTAL;
-		docFieldsPanel.add(commentTextField, c);
-		row++;
+		docFieldsPanel.add(commentTextArea, c);
+		row ++;
 
 		// revised by / revision of
 		JLabel revLabel = new JLabel();
@@ -379,6 +402,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		docFieldsPanel.add(revLabel, c);
 
 		revOfTextField = new JTextField(40);
+		revOfTextField.setBorder(border);
+		revOfTextField.setEditable(false);
+		revOfTextField.setBackground(Color.WHITE);
 		c.gridx = 1;
 		c.gridy = row;
 		c.weightx = 1.0;
@@ -387,6 +413,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		docFieldsPanel.add(revOfTextField, c);
 
 		revByTextField = new JTextField(40);
+		revByTextField.setBorder(border);
+		revByTextField.setEditable(false);
+		revByTextField.setBackground(Color.WHITE);
 		c.gridx = 2;
 		c.gridy = row;
 		c.weightx = 1.0;
@@ -406,6 +435,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		docFieldsPanel.add(decisionLabel, c);
 
 		decisionTextField = new JTextField(40);
+		decisionTextField.setBorder(border);
+		decisionTextField.setEditable(false);
+		decisionTextField.setBackground(Color.WHITE);
 		c.gridx = 1;
 		c.gridy = row;
 		c.weightx = 1.0;
@@ -1182,7 +1214,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		titleTextField.setText(fo.getDocTitle());
 		sourceTextField.setText(fo.getSource());
 		agendaTitleTextField.setText(fo.getAgendaTitle());
-		commentTextField.setText(fo.getComment());
+		commentTextArea.setText(fo.getComment());
 		workItemTextField.setText(fo.getWorkItem());
 		revByTextField.setText(fo.getRevByTDoc());
 		revOfTextField.setText(fo.getRevOfTDoc());
@@ -1196,7 +1228,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		titleTextField.setText("");
 		sourceTextField.setText("");
 		agendaTitleTextField.setText("");
-		commentTextField.setText("");
+		commentTextArea.setText("");
 		workItemTextField.setText("");
 		revByTextField.setText("");
 		revOfTextField.setText("");

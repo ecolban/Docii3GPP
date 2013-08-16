@@ -1,10 +1,14 @@
 package com.drawmetry.docii3gpp;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.SocketException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ResourceBundle;
@@ -27,26 +31,30 @@ public class Synchronizer implements Runnable {
 	private static final String SYNC_ABORTED = "Sync aborted";
 	private static final String SYNC_COMPLETE = "Syn complete";
 	static final Logger LOGGER = Logger.getLogger("com.drawmetry.docii3gpp");
-	
+
 	public Synchronizer(UI ui, URL hostUrl) {
 		this.ui = ui;
 		this.hostUrl = hostUrl;
 	}
-	
 
 	@Override
 	public void run() {
 		LOGGER.log(Level.INFO, String.format("%s\n", STARTING_SYNC));
 		try {
-//			S2PageHandler_1 handler = new S2PageHandler_1(ui);
-			S2PageHandler_2 handler = new S2PageHandler_2(ui);
-//			SPPageHandler_58 handler = new SPPageHandler_58(ui);
-			//			R2PageHandler handler = new R2PageHandler(ui);
-			URLConnection con = (URLConnection) hostUrl
-					.openConnection();
-			BufferedReader input = new BufferedReader(new InputStreamReader(
-					con.getInputStream()));
-
+			// S2PageHandler_1 handler = new S2PageHandler_1(ui);
+			// S2PageHandler_96 handler = new S2PageHandler_96(ui);
+			// SPPageHandler_58 handler = new SPPageHandler_58(ui);
+			// R2PageHandler handler = new R2PageHandler(ui);
+			RanPageHandler_61 handler = new RanPageHandler_61(ui);
+			BufferedReader input = null;
+			if (hostUrl.getAuthority() == null) { // Case where the input is a local file
+				File file = new File(hostUrl.toURI());
+				input = new BufferedReader(new FileReader(file));
+			} else { // case where rge input is a file on an ftp server (e.g. ftp.3gpp.org).
+				URLConnection con = (URLConnection) hostUrl.openConnection();
+				input = new BufferedReader(new InputStreamReader(
+						con.getInputStream()));
+			}
 			String line = null;
 			while ((line = input.readLine()) != null) {
 				handler.readLine(line);
@@ -57,6 +65,8 @@ public class Synchronizer implements Runnable {
 		} catch (MalformedURLException ex) {
 			LOGGER.log(Level.SEVERE, null, ex);
 		} catch (IOException ex) {
+			LOGGER.log(Level.SEVERE, null, ex);
+		} catch (URISyntaxException ex) {
 			LOGGER.log(Level.SEVERE, null, ex);
 		}
 		if (!isAborted()) {
@@ -85,4 +95,5 @@ public class Synchronizer implements Runnable {
 			}
 		});
 	}
+
 }

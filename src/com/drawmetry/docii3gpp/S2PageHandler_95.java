@@ -10,19 +10,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 
+ * Parser of the HTML file (ftp-TDListByTD_S2-95.htm) containing all document
+ * information that 3GPP SA2 MCC generated at SA2 meeting 95.
  * 
  * @author Erik Colban &copy; 2013 <br>
  *         All Rights Reserved Worldwide
  */
-public class S2PageHandler_1 {
+public class S2PageHandler_95 {
 
 	private static final Pattern TDOC_PATTERN = Pattern
 			.compile("(<a .* href=\"(.*\\.zip)\">)?([CGRS][1-5P]-\\d{6})(</a>)?");
 
 	private static final String[] ENTRY_STRINGS = new String[] {
-		/*
-		 */
 			"\\s*<TR VALIGN=TOP>", // ;
 			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Agenda Item
 			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Agenda Item Title
@@ -38,11 +37,12 @@ public class S2PageHandler_1 {
 			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Comment
 			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Decision
 			"\\s*</TR>" };
-	private static final Pattern[] entryPattern = new Pattern[ENTRY_STRINGS.length];
+
+	private static final Pattern[] ENTRY_PATTERNS = new Pattern[ENTRY_STRINGS.length];
 
 	static {
 		for (int i = 0; i < ENTRY_STRINGS.length; i++) {
-			entryPattern[i] = Pattern.compile(ENTRY_STRINGS[i]);
+			ENTRY_PATTERNS[i] = Pattern.compile(ENTRY_STRINGS[i]);
 		}
 	}
 	private int patternIndex = 0;
@@ -73,11 +73,11 @@ public class S2PageHandler_1 {
 	 *            information needed.
 	 * 
 	 */
-	 public S2PageHandler_1(UI ui) {
-	 this.db = ui.getDb();
-	 this.meeting = ui.getMeeting();
-	
-	 }
+	public S2PageHandler_95(UI ui) {
+		this.db = ui.getDb();
+		this.meeting = ui.getMeeting();
+
+	}
 
 	/**
 	 * Handles one line read from the page.
@@ -87,171 +87,116 @@ public class S2PageHandler_1 {
 	 */
 	public void readLine(String line) throws MalformedURLException {
 
-		Matcher matcher = entryPattern[patternIndex].matcher(line);
+		Matcher matcher = ENTRY_PATTERNS[patternIndex].matcher(line);
+		if (!matcher.matches()) {
+			patternIndex = 0;
+			return;
+		}
 		switch (patternIndex) {
 		case 0:
-			if (matcher.matches()) {
-				patternIndex++;
-			} else {
-				patternIndex = 0;
-			}
+			// "\\s*<TR VALIGN=TOP>", // ;
+			patternIndex++;
 			break;
 		case 1:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Agenda Item
-			if (matcher.matches()) {
-				agendaItem = matcher.group(1);
-				patternIndex++;
-			} else {
-				patternIndex = 0;
-			}
+			agendaItem = matcher.group(1);
+			patternIndex++;
 			break;
 		case 2:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Agenda Item Title
-			if (matcher.matches()) {
-				agendaTitle = matcher.group(1);
-				patternIndex++;
-			} else {
-				patternIndex = 0;
-			}
+			agendaTitle = matcher.group(1);
+			patternIndex++;
 			break;
 
 		case 3:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //TDoc #
-			if (matcher.matches()) {
-				String tmp = matcher.group(1);
-				Matcher tdocMatcher = TDOC_PATTERN.matcher(tmp);
-				if (tdocMatcher.matches()) {
-					url = tdocMatcher.group(2);
-					tDoc = tdocMatcher.group(3);
-				} else {
-					url = "";
-					tDoc = "";
-				}
-				patternIndex++;
+			String tmp = matcher.group(1);
+			Matcher tdocMatcher = TDOC_PATTERN.matcher(tmp);
+			if (tdocMatcher.matches()) {
+				url = tdocMatcher.group(2);
+				tDoc = tdocMatcher.group(3);
 			} else {
-				patternIndex = 0;
+				url = "";
+				tDoc = "";
 			}
+			patternIndex++;
 			break;
 		case 4:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Doc type
-			if (matcher.matches()) {
-				docType = matcher.group(1);
-				patternIndex++;
-				break;
-			} else {
-				patternIndex = 0;
-			}
+			docType = matcher.group(1);
+			patternIndex++;
 			break;
 		case 5:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Doc title
-			if (matcher.matches()) {
-				docTitle = matcher.group(1);
-				patternIndex++;
-			} else {
-				patternIndex = 0;
-			}
+			docTitle = matcher.group(1);
+			patternIndex++;
 			break;
 		case 6:
-			//6 "<TD .*><FONT .*>(.*)</FONT></TD>", //Source
-			if (matcher.matches()) {
-				source = matcher.group(1);
-				patternIndex++;
-			} else {
-				patternIndex = 0;
-			}
+			// 6 "<TD .*><FONT .*>(.*)</FONT></TD>", //Source
+			source = matcher.group(1);
+			patternIndex++;
 			break;
 		case 7:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Doc type
-			if (matcher.matches()) {
-//				docType = matcher.group(1);
-				patternIndex++;
-				break;
-			} else {
-				patternIndex = 0;
-			}
+			// docType = matcher.group(1);
+			patternIndex++;
 			break;
 		case 8:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //WI
-			if (matcher.matches()) {
-				workItem = matcher.group(1);
-				patternIndex++;
-			} else {
-				patternIndex = 0;
-			}
+			workItem = matcher.group(1);
+			patternIndex++;
 			break;
 		case 9:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Rev_by
-			if (matcher.matches()) {
-				Matcher tdocMatcher = TDOC_PATTERN.matcher(matcher.group(1));
-				if (tdocMatcher.matches()) {
-					revByTDoc = tdocMatcher.group(3);
-				} else {
-					revByTDoc = "";
-				}
-				patternIndex++;
+			tdocMatcher = TDOC_PATTERN.matcher(matcher.group(1));
+			if (tdocMatcher.matches()) {
+				revByTDoc = tdocMatcher.group(3);
 			} else {
-				patternIndex = 0;
+				revByTDoc = "";
 			}
+			patternIndex++;
 			break;
 		case 10:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Rev_of
-			if (matcher.matches()) {
-				Matcher tdocMatcher = TDOC_PATTERN.matcher(matcher.group(1));
-				if (tdocMatcher.matches()) {
-					revOfTDoc = tdocMatcher.group(3);
-				} else {
-					revOfTDoc = "";
-				}
-				patternIndex++;
+			tdocMatcher = TDOC_PATTERN.matcher(matcher.group(1));
+			if (tdocMatcher.matches()) {
+				revOfTDoc = tdocMatcher.group(3);
 			} else {
-				patternIndex = 0;
+				revOfTDoc = "";
 			}
+			patternIndex++;
 			break;
 		case 11:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //LS_source_file
-			if (matcher.matches()) {
-				lsSource = matcher.group(1);
-				patternIndex++;
-			} else {
-				patternIndex = 0;
-			}
+			lsSource = matcher.group(1);
+			patternIndex++;
 			break;
 		case 12:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Comment
-			if (matcher.matches()) {
-				comment = matcher.group(1);
-				patternIndex++;
-			} else {
-				patternIndex = 0;
-			}
+			comment = matcher.group(1);
+			patternIndex++;
 			break;
 		case 13:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Decision
-			if (matcher.matches()) {
-				decision = matcher.group(1);
-				patternIndex++;
-			} else {
-				patternIndex = 0;
-			}
+			decision = matcher.group(1);
+			patternIndex++;
 			break;
 		case 14:
-			if (matcher.matches()) {
-				try {
-					DocumentObject doc = new DocumentObject(-1, meeting,
-							agendaItem, agendaTitle, url, tDoc, docType,
-							docTitle, source, workItem, revByTDoc, revOfTDoc,
-							lsSource, comment, decision, "");
-					List<DocEntry> entries = db.findEntries(table, doc.getTDoc());
-                    if (entries.isEmpty()) {
-                        db.saveRecord(table, doc);
-                    } else {
-                    	DocEntry entry = entries.get(0);
-                    	
-                    	db.mergeRecord(table, entry.getId(), doc);
-                    }
-				} catch (MalformedURLException ex) {
-					Synchronizer.LOGGER.log(Level.SEVERE, null, ex);
+			try {
+				DocumentObject doc = new DocumentObject(-1, meeting,
+						agendaItem, agendaTitle, url, tDoc, docType, docTitle,
+						source, workItem, revByTDoc, revOfTDoc, lsSource,
+						comment, decision, "");
+				List<DocEntry> entries = db.findEntries(table, doc.getTDoc());
+				if (entries.isEmpty()) {
+					db.saveRecord(table, doc);
+				} else {
+					DocEntry entry = entries.get(0);
+
+					db.mergeRecord(table, entry.getId(), doc);
 				}
+			} catch (MalformedURLException ex) {
+				Synchronizer.LOGGER.log(Level.SEVERE, null, ex);
 			}
 			patternIndex = 0;
 			break;

@@ -43,6 +43,7 @@ public class Configuration extends DefaultHandler {
 	private static Configuration instance;
 	private String database;
 	private String tDocTable;
+	private String ftpPrefix;
 	private static Map<String, Meeting> meetings = new HashMap<String, Meeting>();
 	private static List<String> meetingNames = new ArrayList<String>();
 	public static final Logger LOGGER = Logger
@@ -355,6 +356,8 @@ public class Configuration extends DefaultHandler {
 				remoteDir = atts.getValue(i);
 			} else if (atts.getQName(i).equalsIgnoreCase("remotedir_alt")) {
 				remoteDirAlt = atts.getValue(i);
+			} else if (atts.getQName(i).equalsIgnoreCase("ftp_prefix")) {
+				ftpPrefix = atts.getValue(i);
 			}
 		}
 		if (localDir == null) {
@@ -381,6 +384,11 @@ public class Configuration extends DefaultHandler {
 			}
 		}
 
+	}
+
+	public static String getFtpPrefix() {
+		return "ftp://ftp.3gpp.org/tsg_ran/TSG_RAN/TSGR_61/Docs/";
+//		return instance.ftpPrefix;
 	}
 
 }
