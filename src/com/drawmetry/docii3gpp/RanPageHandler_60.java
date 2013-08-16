@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  * @author Erik Colban &copy; 2013 <br>
  *         All Rights Reserved Worldwide
  */
-public class RanPageHandler_61 {
+public class RanPageHandler_60 {
 
 	// private static final Pattern TDOC_PATTERN = Pattern
 	// .compile("(<a .* href=\"(.*\\.zip)\">)?([CGRS][1-5P]-\\d{6})(</a>)?");
@@ -40,19 +40,19 @@ public class RanPageHandler_61 {
 	private static final Pattern CSV_FIELD_PATTERN = Pattern
 			.compile(",(?:\"((?:[^\"]|\"\")*)\"|([^,]*))");
 
-	private static final Pattern ENTRY_PATTERN = Pattern.compile("^(Yes|No)"
-			+ "(?:,(?:\"((?:[^\"]|\"\")*)\"|([^,]*))){16}"); // 17 fields pr
-																// line
+	private static final Pattern LINE_PATTERN = Pattern.compile("^(Yes|No)"
+			+ "(?:,(?:\"((?:[^\"]|\"\")*)\"|([^,]*))){16}");
 
 	StringBuilder lineBuilder = new StringBuilder();
 	boolean oddQuotes = false;
 
 	private final DataAccessObject db;
 	private final String meeting;
-	 private String table = Configuration.getTables()[0];
+	private String table = Configuration.getTables()[0];
 
-	private String ftpPrefix = "ftp://ftp.3gpp.org/tsg_ran/TSG_RAN/TSGR_61/Docs/";
-//	private String ftpPrefix = Configuration.getFtpPrefix();
+	// private String ftpPrefix =
+	// "ftp://ftp.3gpp.org/tsg_ran/TSG_RAN/TSGR_61/Docs/";
+	private String ftpPrefix = Configuration.getFtpPrefix();
 
 	/**
 	 * Constructor
@@ -62,12 +62,11 @@ public class RanPageHandler_61 {
 	 *            information needed.
 	 * 
 	 */
-	public RanPageHandler_61(UI ui) {
+	public RanPageHandler_60(UI ui) {
 		this.db = ui.getDb();
 		this.meeting = ui.getMeeting();
 
 	}
-
 
 	/**
 	 * Handles one line read from the page.
@@ -97,9 +96,10 @@ public class RanPageHandler_61 {
 	}
 
 	private void processEntry(String line) {
-		Matcher lineMatcher = ENTRY_PATTERN.matcher(line);
-		Matcher fieldMatcher = CSV_FIELD_PATTERN.matcher(line);
-		if (lineMatcher.matches()) {
+		Matcher lineMatcher = LINE_PATTERN.matcher(line);
+		if (lineMatcher.find()) {
+			line = line.substring(lineMatcher.start(), lineMatcher.end());
+			Matcher fieldMatcher = CSV_FIELD_PATTERN.matcher(line);
 			String[] fields = new String[16];
 			String field;
 			for (int i = 0; fieldMatcher.find(); i++) {
@@ -112,15 +112,20 @@ public class RanPageHandler_61 {
 			}
 
 			String decision = fields[DECISION_COLUMN];
-			String agendaItem = fields[AGENDA_ITEM_COLUMN];
 			String agendaTitle = fields[AGENDA_ITEM_COLUMN];
 			String url = ftpPrefix + fields[TDOC_COLUMN] + ".zip";
 			String tDoc = fields[TDOC_COLUMN];
 			String docTitle = fields[TITLE_COLUMN];
+			if(docTitle.length() > 300){
+				docTitle = docTitle.substring(0, 300 -1) + "~";
+			}
 			String source = fields[SOURCE_COLUMN];
 			String docType = fields[TYPE_COLUMN];
 			String lsSource = fields[LS_SOURCE_COLUMN];
 			String workItem = fields[WI_COLUMN];
+			if(workItem.length() > 50) {
+				workItem = workItem.substring(0, 50 -1 ) + "~";
+			}
 			String comment;
 			if (fields[REV_OF_COLUMN].isEmpty()) {
 				comment = fields[COMMENT_COLUMN];
@@ -128,22 +133,24 @@ public class RanPageHandler_61 {
 				comment = fields[COMMENT_COLUMN] + " *** Related docs: "
 						+ fields[REV_OF_COLUMN];
 			}
+			if (comment.length() > 400) {
+				comment = comment.substring(0, 400 - 1) + "~";
+			}
 			// System.out.println(Arrays.toString(fields));
 			DocumentObject doc;
 			try {
-				doc = new DocumentObject(-1, meeting, agendaItem, agendaTitle,
+				doc = new DocumentObject(-1, meeting, "", agendaTitle,
 						url, tDoc, docType, docTitle, source, workItem, "", "",
 						lsSource, comment, decision, "");
-				 List<DocEntry> entries = db.findEntries(table,
-				 doc.getTDoc());
-				 if (entries.isEmpty()) {
-				 db.saveRecord(table, doc);
-				 } else {
-				 DocEntry entry = entries.get(0);
-				
-				 db.mergeRecord(table, entry.getId(), doc);
-				 }
-//				System.out.println(doc);
+				List<DocEntry> entries = db.findEntries(table, doc.getTDoc());
+				if (entries.isEmpty()) {
+					db.saveRecord(table, doc);
+				} else {
+					DocEntry entry = entries.get(0);
+
+					db.mergeRecord(table, entry.getId(), doc);
+				}
+				// System.out.println(doc);
 			} catch (MalformedURLException ex) {
 				Synchronizer.LOGGER.log(Level.SEVERE, null, ex);
 			}

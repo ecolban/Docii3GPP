@@ -45,7 +45,7 @@ public class Synchronizer implements Runnable {
 			// S2PageHandler_96 handler = new S2PageHandler_96(ui);
 			// SPPageHandler_58 handler = new SPPageHandler_58(ui);
 			// R2PageHandler handler = new R2PageHandler(ui);
-			RanPageHandler_61 handler = new RanPageHandler_61(ui);
+			RanPageHandler_60 handler = new RanPageHandler_60(ui);
 			BufferedReader input = null;
 			if (hostUrl.getAuthority() == null) { // Case where the input is a local file
 				File file = new File(hostUrl.toURI());
