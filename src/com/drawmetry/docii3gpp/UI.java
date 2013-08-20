@@ -3,7 +3,6 @@ package com.drawmetry.docii3gpp;
 import com.drawmetry.docii3gpp.database.DataAccessObject;
 import com.inet.jortho.SpellChecker;
 
-import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -898,7 +897,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 
 	private void filter() {
 		allEntries = db.findEntries(getTable(), currentMeeting, "%", "%", "%",
-				"%", "%", "%", "%");
+				"%", "%", "%", "%", "%");
 	}
 
 	private void filterButtonActionPerformed(ActionEvent evt) {

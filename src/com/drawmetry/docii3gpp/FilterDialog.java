@@ -43,6 +43,7 @@ public class FilterDialog extends JDialog {
 	private JTextField agendaTitleTextField;
 	private JTextField workItemTextField;
 	private JTextField decisionTextField;
+	private JTextField commentTextField;
 	private JTextField notesTextField;
 
 	/**
@@ -58,6 +59,7 @@ public class FilterDialog extends JDialog {
 		authorsTextField.addActionListener(filterListener);
 		agendaTitleTextField.addActionListener(filterListener);
 		workItemTextField.addActionListener(filterListener);
+		commentTextField.addActionListener(filterListener);
 		notesTextField.addActionListener(filterListener);
 		decisionTextField.addActionListener(filterListener);
 
@@ -98,7 +100,7 @@ public class FilterDialog extends JDialog {
 		c.gridwidth = 1;
 		add(tDocTextField, c);
 		row++;
-		
+
 		JLabel titleLabel = new JLabel();
 		titleLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
 		titleLabel.setText("Title:"); // NOI18N
@@ -162,6 +164,22 @@ public class FilterDialog extends JDialog {
 		c.weightx = 1.0;
 		c.gridwidth = 2;
 		add(workItemTextField, c);
+		row++;
+
+		JLabel commentLabel = new JLabel();
+		workItemLabel.setFont(new java.awt.Font("SansSerif", 0, 11));
+		workItemLabel.setText("Comment:"); // NOI18N
+		c.gridx = 0;
+		c.gridy = row;
+		c.insets = insets;
+		add(commentLabel, c);
+
+		commentTextField = new JTextField(40);
+		c.gridx = 1;
+		c.gridy = row;
+		c.weightx = 1.0;
+		c.gridwidth = 2;
+		add(commentTextField, c);
 		row++;
 
 		JLabel notesLabel = new JLabel();
@@ -254,7 +272,8 @@ public class FilterDialog extends JDialog {
 				"%" + notesTextField.getText() + "%",
 				"%" + agendaTitleTextField.getText() + "%",
 				"%" + workItemTextField.getText() + "%",
-				"%" + decisionTextField.getText() + "%");
+				"%" + decisionTextField.getText() + "%",
+				"%" + commentTextField.getText() + "%");
 	}
 
 	private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {
@@ -269,6 +288,7 @@ public class FilterDialog extends JDialog {
 		notesTextField.setText("");
 		workItemTextField.setText("");
 		decisionTextField.setText("");
+		commentTextField.setText("");
 	}
 
 }

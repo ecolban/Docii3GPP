@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  * @author Erik Colban &copy; 2013 <br>
  *         All Rights Reserved Worldwide
  */
-public class R2PageHandler_81 {
+public class R2PageHandler_81 implements PageHandler {
 
 	private static final int AGENDA_ITEM_COLUMN = 0;
 	private static final int DECISION_COLUMN = 1;
@@ -124,16 +124,10 @@ public class R2PageHandler_81 {
 			String url = ftpPrefix + fields[TDOC_COLUMN] + ".zip";
 			String tDoc = fields[TDOC_COLUMN];
 			String docTitle = fields[TITLE_COLUMN];
-			if (docTitle.length() > 300) {
-				docTitle = docTitle.substring(0, 300 - 1) + "~";
-			}
 			String source = fields[SOURCE_COLUMN];
 			String docType = fields[TYPE_COLUMN];
 			String lsSource = fields[LS_SOURCE_COLUMN];
 			String workItem = fields[WI_COLUMN];
-			if (workItem.length() > 50) {
-				workItem = workItem.substring(0, 50 - 1) + "~";
-			}
 			String comment = fields[COMMENT_COLUMN];
 			if (!fields[FURTHER_INFO_COLUMN].isEmpty()) {
 				comment = comment + " " + fields[FURTHER_INFO_COLUMN];
@@ -141,9 +135,6 @@ public class R2PageHandler_81 {
 			if (!fields[RELATED_TDOC_COLUMN].isEmpty()) {
 				comment = comment + " *** Related TDocs: "
 						+ fields[RELATED_TDOC_COLUMN];
-			}
-			if (comment.length() > 400) {
-				comment = comment.substring(0, 400 - 1) + "~";
 			}
 			DocumentObject doc;
 			try {
@@ -153,11 +144,11 @@ public class R2PageHandler_81 {
 				List<DocEntry> entries = db.findEntries(table, doc.getTDoc());
 				if (entries.isEmpty()) {
 					 db.saveRecord(table, doc);
-//					System.out.println(doc);
 				} else {
 					 DocEntry entry = entries.get(0);
 					 db.mergeRecord(table, entry.getId(), doc);
 				}
+//					System.out.println(doc);
 			} catch (MalformedURLException ex) {
 				Synchronizer.LOGGER.log(Level.SEVERE, null, ex);
 			}

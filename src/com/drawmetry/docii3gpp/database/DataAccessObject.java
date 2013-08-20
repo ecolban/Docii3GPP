@@ -50,22 +50,37 @@ public class DataAccessObject {
 	private String[] tables = Configuration.getTables();
 	private static final String ABNORMAL_SHUT_DOWN = "Abnormal shutdown";
 	private static final String NORMAL_SHUT_DOWN = "Normal shutdown";
+	private static final int MEETING_LENGTH = 10;
+	private static final int AGENDA_ITEM_LENGTH = 10;
+	private static final int AGENDA_TITLE_LENGTH = 300;
+	private static final int URL_LENGTH = 80;
+	private static final int TDOC_LENGTH = 9;
+	private static final int DOC_TYPE_LENGTH = 16;
+	private static final int DOC_TITLE_LENGTH = 300;
+	private static final int SOURCE_LENGTH = 400;
+	private static final int WORK_ITEM_LENGTH = 100;
+	private static final int LS_SOURCE_LENGTH = 50;
+	private static final int COMMENT_LENGTH = 400;
+	private static final int DECISION_LENGTH = 50;
+	private static final int NOTES_LENGTH = 2000;
 	private static final String strCreateDocumentTable = "create table %s ("
-			+ "  ID           INTEGER NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
-			+ ", MEETING   VARCHAR(10)" //
-			+ ", AGENDA_ITEM  VARCHAR(10)" //
-			+ ", AGENDA_TITLE VARCHAR(300)" + ", URL          VARCHAR(80)" //
-			+ ", TDOC         CHAR(9)" //
-			+ ", DOC_TYPE     VARCHAR(16)" //
-			+ ", DOC_TITLE        VARCHAR(300)" //
-			+ ", SOURCE       VARCHAR(400)" //
-			+ ", WORK_ITEM    VARCHAR(50)" //
-			+ ", REV_BY       CHAR(9)" //
-			+ ", REV_OF       CHAR(9)" //
-			+ ", LS_SOURCE    VARCHAR(50)" //
-			+ ", COMMENT      VARCHAR(400)" //
-			+ ", DECISION     VARCHAR(50)" //
-			+ ", NOTES        VARCHAR(2000)" //
+			+ "  ID           INTEGER NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)" //
+			+ ", MEETING      VARCHAR("
+			+ MEETING_LENGTH + ")" //
+			+ ", AGENDA_ITEM  VARCHAR(" + AGENDA_ITEM_LENGTH + ")" //
+			+ ", AGENDA_TITLE VARCHAR(" + AGENDA_TITLE_LENGTH + ")" //
+			+ ", URL          VARCHAR(" + URL_LENGTH + ")" //
+			+ ", TDOC         CHAR(" + TDOC_LENGTH + ")" //
+			+ ", DOC_TYPE     VARCHAR(" + DOC_TYPE_LENGTH + ")" //
+			+ ", DOC_TITLE    VARCHAR(" + DOC_TITLE_LENGTH + ")" //
+			+ ", SOURCE       VARCHAR(" + SOURCE_LENGTH + ")" //
+			+ ", WORK_ITEM    VARCHAR(" + WORK_ITEM_LENGTH + ")" //
+			+ ", REV_BY       CHAR(" + TDOC_LENGTH + ")" //
+			+ ", REV_OF       CHAR(" + TDOC_LENGTH + ")" //
+			+ ", LS_SOURCE    VARCHAR(" + LS_SOURCE_LENGTH + ")" //
+			+ ", COMMENT      VARCHAR(" + COMMENT_LENGTH + ")" //
+			+ ", DECISION     VARCHAR(" + DECISION_LENGTH + ")" //
+			+ ", NOTES        VARCHAR(" + NOTES_LENGTH + ")" //
 			+ ")";
 	private static final String strGetRecord = "select * from %s "
 			+ "where ID = ?";
@@ -80,7 +95,7 @@ public class DataAccessObject {
 			+ "and LOWER(DOC_TITLE) like ? "
 			+ "and LOWER(SOURCE) like ? and LOWER(NOTES) like ? "
 			+ "and LOWER(AGENDA_TITLE) like ? and LOWER(WORK_ITEM) like ? "
-			+ "and LOWER(DECISION) like ? " + "order by TDOC desc";
+			+ "and LOWER(DECISION) like ? and LOWER(COMMENT) like ? " + "order by TDOC desc";
 	private static final String strUpdateNotesExistingRecord = "update %s "
 			+ "set NOTES = ? where ID = ?";
 	private static final String strUpdateOtherExistingRecord = "update %s "
@@ -113,20 +128,23 @@ public class DataAccessObject {
 		db.connect();
 		try {
 			Statement stmt = db.dbConnection.createStatement();
-			
+
+			// stmt.execute("alter table TDOC_TABLE alter column  WORK_ITEM set data type VARCHAR(100)");
+			// db.dbConnection.commit();
+
 			ResultSet rs = stmt
-					.executeQuery("select ID from TDOC_TABLE where MEETING like 'R2-81bis' and TDOC not like 'R2-%'");
+					.executeQuery("select ID from TDOC_TABLE where MEETING like 'R2-83' and TDOC not like 'R2-%'");
 			int count = 0;
 			while (rs.next()) {
 				int id = rs.getInt("ID");
-//				System.out.println("" + db.getDocumentOject("WG80221", id));
+				// System.out.println("" + db.getDocumentOject("WG80221", id));
 				db.deleteRecord("TDOC_TABLE", id);
 				count++;
 				db.dbConnection.commit();
 			}
 			System.out.println("count = " + count);
 		} catch (SQLException ex) {
-			UI.LOGGER.log(Level.SEVERE, null, ex);
+			UI.LOGGER.log(Level.SEVERE, ex.getMessage());
 		}
 		db.disconnect();
 	}
@@ -389,40 +407,74 @@ public class DataAccessObject {
 		return Configuration.getDerbyUrl() + Configuration.getDatabase();
 	}
 
-	public int saveRecord(String table, DocumentObject record) {
+	/**
+	 * insert into %s " +
+	 * "(MEETING, AGENDA_ITEM, AGENDA_TITLE, URL, TDOC, DOC_TYPE, DOC_TITLE, SOURCE, "
+	 * + "WORK_ITEM, REV_BY, REV_OF, LS_SOURCE, COMMENT, DECISION, NOTES)" + "
+	 * values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?, ?, ?)
+	 * 
+	 * @param table
+	 * @param doc
+	 * @return
+	 */
+	public int saveRecord(String table, DocumentObject doc) {
 		int id = -1;
 		int index = getTableIndex(table);
 		try {
 			stmtSaveNewRecord[index].clearParameters();
-			stmtSaveNewRecord[index].setString(1, record.getMeeting());
-			stmtSaveNewRecord[index].setString(2, record.getAgendaItem());
-			stmtSaveNewRecord[index].setString(3, record.getAgendaTitle());
-			URL url = record.getUrl();
+			stmtSaveNewRecord[index].setString(1,
+					trim(doc.getMeeting(), MEETING_LENGTH));
+			stmtSaveNewRecord[index].setString(2,
+					trim(doc.getAgendaItem(), AGENDA_ITEM_LENGTH));
+			stmtSaveNewRecord[index].setString(3,
+					trim(doc.getAgendaTitle(), AGENDA_TITLE_LENGTH));
+			URL url = doc.getUrl();
 			stmtSaveNewRecord[index].setString(4,
-					url == null ? null : url.toString());
-			stmtSaveNewRecord[index].setString(5, record.getTDoc());
-			stmtSaveNewRecord[index].setString(6, record.getDocType());
-			stmtSaveNewRecord[index].setString(7, record.getDocTitle());
-			stmtSaveNewRecord[index].setString(8, record.getSource());
-			stmtSaveNewRecord[index].setString(9, record.getWorkItem());
-			stmtSaveNewRecord[index].setString(10, record.getRevByTDoc());
-			stmtSaveNewRecord[index].setString(11, record.getRevOfTDoc());
-			stmtSaveNewRecord[index].setString(12, record.getLsSource());
-			stmtSaveNewRecord[index].setString(13, record.getComment());
-			stmtSaveNewRecord[index].setString(14, record.getDecision());
-			stmtSaveNewRecord[index].setString(15, record.getNotes());
+					trim(url == null ? null : url.toString(), URL_LENGTH));
+			stmtSaveNewRecord[index].setString(5,
+					trim(doc.getTDoc(), TDOC_LENGTH));
+			stmtSaveNewRecord[index].setString(6,
+					trim(doc.getDocType(), DOC_TYPE_LENGTH));
+			stmtSaveNewRecord[index].setString(7,
+					trim(doc.getDocTitle(), DOC_TITLE_LENGTH));
+			stmtSaveNewRecord[index].setString(8,
+					trim(doc.getSource(), SOURCE_LENGTH));
+			stmtSaveNewRecord[index].setString(9,
+					trim(doc.getWorkItem(), WORK_ITEM_LENGTH));
+			stmtSaveNewRecord[index].setString(10,
+					trim(doc.getRevByTDoc(), TDOC_LENGTH));
+			stmtSaveNewRecord[index].setString(11,
+					trim(doc.getRevOfTDoc(), TDOC_LENGTH));
+			stmtSaveNewRecord[index].setString(12,
+					trim(doc.getLsSource(), LS_SOURCE_LENGTH));
+			stmtSaveNewRecord[index].setString(13,
+					trim(doc.getComment(), COMMENT_LENGTH));
+			stmtSaveNewRecord[index].setString(14,
+					trim(doc.getDecision(), DECISION_LENGTH));
+			stmtSaveNewRecord[index].setString(15,
+					trim(doc.getNotes(), NOTES_LENGTH));
 			dbConnection.commit();
 			@SuppressWarnings("unused")
 			int rowCount = stmtSaveNewRecord[index].executeUpdate();
 			ResultSet results = stmtSaveNewRecord[index].getGeneratedKeys();
 			if (results.next()) {
 				id = results.getInt(1);
-				UI.LOGGER.log(Level.INFO, "{0} added.\n", record.getTDoc());
+				UI.LOGGER.log(Level.INFO, "{0} added.\n", doc.getTDoc());
 			}
 		} catch (SQLException sqle) {
 			printSQLException(sqle);
 		}
 		return id;
+	}
+
+	private String trim(String string, int length) {
+		if (string.length() > length) {
+			UI.LOGGER.log(Level.WARNING, "Field {0} truncated to length {1}",
+					new Object[] { string, length });
+			return string.substring(0, length - 1) + "~";
+		} else {
+			return string;
+		}
 	}
 
 	/**
@@ -434,14 +486,15 @@ public class DataAccessObject {
 	 * @param source
 	 * @param notes
 	 * @param decision
-	 * @param  
+	 * @param
 	 * @param
 	 * @param docTitle
 	 * @return
 	 */
 	public List<DocEntry> findEntries(String table, String meeting,
-			String tDoc, String title, String source, String notes, String agendaTitle,
-			String workItem, String decision) {
+			String tDoc, String title, String source, String notes,
+			String agendaTitle, String workItem, String decision,
+			String comments) {
 		List<DocEntry> listEntries = new ArrayList<DocEntry>();
 		ResultSet results = null;
 		int index = getTableIndex(table);
@@ -455,6 +508,7 @@ public class DataAccessObject {
 			stmtFindEntries[index].setString(6, agendaTitle.toLowerCase());
 			stmtFindEntries[index].setString(7, workItem.toLowerCase());
 			stmtFindEntries[index].setString(8, decision.toLowerCase());
+			stmtFindEntries[index].setString(9, comments.toLowerCase());
 			results = stmtFindEntries[index].executeQuery();
 			while (results.next()) {
 				int id = results.getInt(1);
@@ -556,8 +610,8 @@ public class DataAccessObject {
 		int index = getTableIndex(table);
 		try {
 			stmtUpdateNotesExistingRecord[index].clearParameters();
-			stmtUpdateNotesExistingRecord[index]
-					.setString(1, record.getNotes());
+			stmtUpdateNotesExistingRecord[index].setString(1,
+					trim(record.getNotes(), NOTES_LENGTH));
 			stmtUpdateNotesExistingRecord[index].setInt(2, id);
 			stmtUpdateNotesExistingRecord[index].executeUpdate();
 			dbConnection.commit();
@@ -587,29 +641,29 @@ public class DataAccessObject {
 		try {
 			stmtUpdateOtherExistingRecord[index].clearParameters();
 			stmtUpdateOtherExistingRecord[index].setString(1,
-					doc.getAgendaItem());
+					trim(doc.getAgendaItem(), AGENDA_ITEM_LENGTH));
 			stmtUpdateOtherExistingRecord[index].setString(2,
-					doc.getAgendaTitle());
+					trim(doc.getAgendaTitle(), AGENDA_TITLE_LENGTH));
 			stmtUpdateOtherExistingRecord[index].setString(3,
-					url == null ? null : url.toString());
-			stmtUpdateOtherExistingRecord[index].setString(4, 
-					doc.getDocType());
-			stmtUpdateOtherExistingRecord[index].setString(5, 
-					doc.getDocTitle());
-			stmtUpdateOtherExistingRecord[index].setString(6, 
-					doc.getSource());
-			stmtUpdateOtherExistingRecord[index].setString(7, 
-					doc.getWorkItem());
+					trim(url == null ? "" : url.toString(), URL_LENGTH));
+			stmtUpdateOtherExistingRecord[index].setString(4,
+					trim(doc.getDocType(), DOC_TYPE_LENGTH));
+			stmtUpdateOtherExistingRecord[index].setString(5,
+					trim(doc.getDocTitle(), DOC_TITLE_LENGTH));
+			stmtUpdateOtherExistingRecord[index].setString(6,
+					trim(doc.getSource(), SOURCE_LENGTH));
+			stmtUpdateOtherExistingRecord[index].setString(7,
+					trim(doc.getWorkItem(), WORK_ITEM_LENGTH));
 			stmtUpdateOtherExistingRecord[index].setString(8,
-					doc.getRevByTDoc());
+					trim(doc.getRevByTDoc(), TDOC_LENGTH));
 			stmtUpdateOtherExistingRecord[index].setString(9,
-					doc.getRevOfTDoc());
+					trim(doc.getRevOfTDoc(), TDOC_LENGTH));
 			stmtUpdateOtherExistingRecord[index].setString(10,
-					doc.getLsSource());
-			stmtUpdateOtherExistingRecord[index].setString(11, 
-					doc.getComment());
-			stmtUpdateOtherExistingRecord[index].setString(12, 
-					doc.getDecision());
+					trim(doc.getLsSource(), LS_SOURCE_LENGTH));
+			stmtUpdateOtherExistingRecord[index].setString(11,
+					trim(doc.getComment(), COMMENT_LENGTH));
+			stmtUpdateOtherExistingRecord[index].setString(12,
+					trim(doc.getDecision(), DECISION_LENGTH));
 			stmtUpdateOtherExistingRecord[index].setInt(13, id);
 			stmtUpdateOtherExistingRecord[index].executeUpdate();
 			dbConnection.commit();

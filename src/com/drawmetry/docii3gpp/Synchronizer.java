@@ -30,7 +30,8 @@ public class Synchronizer implements Runnable {
 	private static final String STARTING_SYNC = "Starting sync";
 	private static final String SYNC_ABORTED = "Sync aborted";
 	private static final String SYNC_COMPLETE = "Syn complete";
-	public static final Logger LOGGER = Logger.getLogger("com.drawmetry.docii3gpp");
+	public static final Logger LOGGER = Logger
+			.getLogger("com.drawmetry.docii3gpp");
 
 	public Synchronizer(UI ui, URL hostUrl) {
 		this.ui = ui;
@@ -41,15 +42,18 @@ public class Synchronizer implements Runnable {
 	public void run() {
 		LOGGER.log(Level.INFO, String.format("%s\n", STARTING_SYNC));
 		try {
-			// S2PageHandler_1 handler = new S2PageHandler_1(ui);
-			// S2PageHandler_96 handler = new S2PageHandler_96(ui);
-			// SPPageHandler_58 handler = new SPPageHandler_58(ui);
-			R2PageHandler_81 handler = new R2PageHandler_81(ui);
+			// PageHandler handler = new S2PageHandler_1(ui);
+			 PageHandler handler = new S2PageHandler_96(ui);
+			// PageHandler handler = new SPPageHandler_58(ui);
+			// PageHandler handler = new R2PageHandler_81(ui);
+			// PageHandler handler = new RPPageHandler_60(ui);
 			BufferedReader input = null;
-			if (hostUrl.getAuthority() == null) { // case where the input is a local file
+			if (hostUrl.getAuthority() == null) { // case where the input is a
+													// local file
 				File file = new File(hostUrl.toURI());
 				input = new BufferedReader(new FileReader(file));
-			} else { // case where the input is a file on an ftp server (e.g. ftp.3gpp.org).
+			} else { // case where the input is a file on an ftp server (e.g.
+						// ftp.3gpp.org).
 				URLConnection con = (URLConnection) hostUrl.openConnection();
 				input = new BufferedReader(new InputStreamReader(
 						con.getInputStream()));
@@ -93,6 +97,10 @@ public class Synchronizer implements Runnable {
 				ui.setSyncLock(false);
 			}
 		});
+	}
+
+	public static void main(String[] args) {
+
 	}
 
 }

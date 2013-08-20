@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  * @author Erik Colban &copy; 2013 <br>
  *         All Rights Reserved Worldwide
  */
-public class RPPageHandler_60 {
+public class RPPageHandler_60 implements PageHandler {
 
 	private static final int DECISION_COLUMN = 1;
 	private static final int AGENDA_ITEM_COLUMN = 3;
@@ -35,11 +35,12 @@ public class RPPageHandler_60 {
 	private static final int COMMENT_COLUMN = 14;
 	private static final int REV_OF_COLUMN = 15;
 
+	private static final String CSV_FIELD_REGEX = ",(?:\"((?:[^\"]|\"\")*)\"|([^,]*))";
 	private static final Pattern CSV_FIELD_PATTERN = Pattern
-			.compile(",(?:\"((?:[^\"]|\"\")*)\"|([^,]*))");
+			.compile(CSV_FIELD_REGEX);
 
 	private static final Pattern LINE_PATTERN = Pattern.compile("^(Yes|No)"
-			+ "(?:,(?:\"((?:[^\"]|\"\")*)\"|([^,]*))){16}");
+			+ "(?:" + CSV_FIELD_REGEX + "){16}");
 
 	StringBuilder lineBuilder = new StringBuilder();
 	boolean oddQuotes = false;
@@ -72,6 +73,7 @@ public class RPPageHandler_60 {
 		this.meeting = "RAN-60";
 
 	}
+
 	/**
 	 * Handles one line read from the page.
 	 * 
@@ -92,9 +94,7 @@ public class RPPageHandler_60 {
 	private boolean oddQuotes(String line) {
 		boolean result = false;
 		for (int i = 0; i < line.length(); i++) {
-			if (line.charAt(i) == '\"') {
-				result = !result;
-			}
+			result ^= line.charAt(i) == '\"';
 		}
 		return result;
 	}
@@ -120,16 +120,10 @@ public class RPPageHandler_60 {
 			String url = ftpPrefix + fields[TDOC_COLUMN] + ".zip";
 			String tDoc = fields[TDOC_COLUMN];
 			String docTitle = fields[TITLE_COLUMN];
-			if(docTitle.length() > 300){
-				docTitle = docTitle.substring(0, 300 -1) + "~";
-			}
 			String source = fields[SOURCE_COLUMN];
 			String docType = fields[TYPE_COLUMN];
 			String lsSource = fields[LS_SOURCE_COLUMN];
 			String workItem = fields[WI_COLUMN];
-			if(workItem.length() > 50) {
-				workItem = workItem.substring(0, 50 -1 ) + "~";
-			}
 			String comment;
 			if (fields[REV_OF_COLUMN].isEmpty()) {
 				comment = fields[COMMENT_COLUMN];
@@ -137,14 +131,11 @@ public class RPPageHandler_60 {
 				comment = fields[COMMENT_COLUMN] + " *** Related docs: "
 						+ fields[REV_OF_COLUMN];
 			}
-			if (comment.length() > 400) {
-				comment = comment.substring(0, 400 - 1) + "~";
-			}
 			// System.out.println(Arrays.toString(fields));
 			DocumentObject doc;
 			try {
-				doc = new DocumentObject(-1, meeting, "", agendaTitle,
-						url, tDoc, docType, docTitle, source, workItem, "", "",
+				doc = new DocumentObject(-1, meeting, "", agendaTitle, url,
+						tDoc, docType, docTitle, source, workItem, "", "",
 						lsSource, comment, decision, "");
 				List<DocEntry> entries = db.findEntries(table, doc.getTDoc());
 				if (entries.isEmpty()) {
@@ -154,11 +145,27 @@ public class RPPageHandler_60 {
 
 					db.mergeRecord(table, entry.getId(), doc);
 				}
-				// System.out.println(doc);
+//				 System.out.println(doc);
 			} catch (MalformedURLException ex) {
-				Synchronizer.LOGGER.log(Level.SEVERE, null, ex);
+				Synchronizer.LOGGER.log(Level.SEVERE, ex.getMessage());
 			}
 		}
 	}
+	
+	 /** Used for test purposes only
+	 * 
+	 * @param args
+	 *            ignored
+	 */
+	public static void main(String[] args) {
+		String line = "Yes,03.2: LSin: LTE relevance,noted,,R2-130003,"
+				+ "LS on UE capability for the joint operation of downlink CoMP and CA (R1-125392; contact: Huawei),"
+				+ "RAN1,LSin,,,,,"
+				+ "to: RAN2; received on Fri of RAN2 #80 as R2-126113 and not treated there but taken into account in email discussion [80#14]; no LS answer,REL-11,COMP_LTE_DL-Core,"
+				+ "\"R1-125392, R2-126113\",,,,,,,,,,,,,,,,";
+		RPPageHandler_60 handler = new RPPageHandler_60();
+		handler.processEntry(line);
+	}
+	
 
 }

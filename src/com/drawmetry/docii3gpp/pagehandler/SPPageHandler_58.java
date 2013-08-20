@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  * @author Erik Colban &copy; 2013 <br>
  *         All Rights Reserved Worldwide
  */
-public class SPPageHandler_58 {
+public class SPPageHandler_58 implements PageHandler {
 
 	private static final Pattern TDOC_PATTERN = Pattern
 			.compile("(<a .* href=\"(.*\\.zip)\">)?([CGRS][1-5P]-\\d{6})(</a>)?");

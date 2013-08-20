@@ -71,19 +71,16 @@ public class DocumentObject {
 	 * @param notes
 	 * @throws MalformedURLException
 	 */
-	public DocumentObject(int id, String meeting, String agendaItem, String agendaTitle,
-			String url, String tDoc, String docType, String docTitle,
-			String source, String workItem, String revByTDoc, String revOfTDoc,
-			String lsSource, String comment, String decision, String notes) throws MalformedURLException {
+	public DocumentObject(int id, String meeting, String agendaItem,
+			String agendaTitle, String url, String tDoc, String docType,
+			String docTitle, String source, String workItem, String revByTDoc,
+			String revOfTDoc, String lsSource, String comment, String decision,
+			String notes) throws MalformedURLException {
 		this.id = id;
 		this.meeting = meeting;
 		this.agendaItem = agendaItem;
 		this.agendaTitle = agendaTitle;
-		if (url != null && !url.isEmpty()) {
-			this.url = new URL(url);
-		} else {
-			this.url = null;
-		}
+		this.url = url == null || url.isEmpty() ? null : new URL(url);
 		this.tDoc = tDoc;
 		this.docType = docType;
 		this.docTitle = docTitle;
@@ -177,15 +174,15 @@ public class DocumentObject {
 	void setId(int id) {
 		this.id = id;
 	}
-	
+
 	public String getMeeting() {
 		return meeting;
 	}
-	
+
 	public void setMeeting(String meeting) {
 		this.meeting = meeting;
 	}
-	
+
 	public String getAgendaItem() {
 		return agendaItem;
 	}
@@ -203,7 +200,7 @@ public class DocumentObject {
 	}
 
 	public URL getUrl() {
-		
+
 		return url;
 	}
 

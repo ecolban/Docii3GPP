@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  * @author Erik Colban &copy; 2013 <br>
  *         All Rights Reserved Worldwide
  */
-public class SPPageHandler_60 {
+public class SPPageHandler_60 implements PageHandler {
 
 	private static final Pattern TDOC_PATTERN = Pattern
 			.compile("(<a .* href=\"(.*\\.zip)\">)?([CGRS][1-5P]-\\d{6})(</a>)?");
@@ -57,16 +57,13 @@ public class SPPageHandler_60 {
 	private String url;
 	private String docTitle;
 	private String source;
-	private String summary;
 	private String docType;
-	private String docFor;
 	private String decision;
 	// private String workItem;
 	private String revByTDoc;
 	private String revOfTDoc;
 	private String lsSource;
 	private String comment;
-	private String rx;
 	private String table = Configuration.getTables()[0];
 
 	private final DataAccessObject db;
@@ -152,7 +149,6 @@ public class SPPageHandler_60 {
 		case 5:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Summary
 			if (matcher.matches()) {
-				summary = matcher.group(1);
 				patternIndex++;
 			} else {
 				patternIndex = 0;
@@ -170,7 +166,6 @@ public class SPPageHandler_60 {
 		case 7:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Doc for
 			if (matcher.matches()) {
-				docFor = matcher.group(1);
 				patternIndex++;
 				break;
 			} else {
@@ -235,7 +230,6 @@ public class SPPageHandler_60 {
 		case 13:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Rx
 			if (matcher.matches()) {
-				rx = matcher.group(1);
 				patternIndex++;
 			} else {
 				patternIndex = 0;
