@@ -34,6 +34,7 @@ import javax.sql.rowset.WebRowSet;
  */
 public class DataAccessObject {
 
+	private static DataAccessObject db;
 	/* the default framework is embedded */
 	private Connection dbConnection;
 	private Properties dbProperties;
@@ -106,7 +107,7 @@ public class DataAccessObject {
 			+ "where ID = ?";
 
 	/** Creates a new instance of DataAccessObject */
-	public DataAccessObject() {
+	private DataAccessObject() {
 		dbProperties = loadDBProperties();
 		setDBSystemDir();
 		this.dbName = dbProperties.getProperty("db.name");
@@ -124,7 +125,7 @@ public class DataAccessObject {
 	public static void main(String[] args) {
 		// dump("WG80211", new File("D:\\Database\\.docii3gpp\\dump.xml"));
 		Configuration.initialize();
-		DataAccessObject db = new DataAccessObject();
+		DataAccessObject db = DataAccessObject.getInstance();
 		db.connect();
 		try {
 			Statement stmt = db.dbConnection.createStatement();
@@ -151,7 +152,7 @@ public class DataAccessObject {
 
 	@SuppressWarnings("unused")
 	private static void dump(String table, File toFile) {
-		DataAccessObject db = new DataAccessObject();
+		DataAccessObject db = DataAccessObject.getInstance();
 		db.connect();
 		PrintStream out = null;
 		Statement statement = null;
@@ -772,6 +773,13 @@ public class DataAccessObject {
 			}
 		}
 		return -1;
+	}
+
+	public static DataAccessObject getInstance() {
+		if(db == null) {
+			db = new DataAccessObject();
+		}
+		return db;
 	}
 
 }

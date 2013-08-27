@@ -42,11 +42,7 @@ public class Synchronizer implements Runnable {
 	public void run() {
 		LOGGER.log(Level.INFO, String.format("%s\n", STARTING_SYNC));
 		try {
-			// PageHandler handler = new S2PageHandler_1(ui);
-			 PageHandler handler = new S2PageHandler_96(ui);
-			// PageHandler handler = new SPPageHandler_58(ui);
-			// PageHandler handler = new R2PageHandler_81(ui);
-			// PageHandler handler = new RPPageHandler_60(ui);
+			PageHandler handler = PageHandlerFactory.getInstance(ui.getMeeting());
 			BufferedReader input = null;
 			if (hostUrl.getAuthority() == null) { // case where the input is a
 													// local file
@@ -60,17 +56,19 @@ public class Synchronizer implements Runnable {
 			}
 			String line = null;
 			while ((line = input.readLine()) != null) {
-				handler.readLine(line);
+				handler.processLine(line);
 			}
 
 		} catch (SocketException ex) {
 			LOGGER.log(Level.INFO, "{0}\n", SYNC_ABORTED);
 		} catch (MalformedURLException ex) {
-			LOGGER.log(Level.SEVERE, null, ex);
+			LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
 		} catch (IOException ex) {
-			LOGGER.log(Level.SEVERE, null, ex);
+			LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
 		} catch (URISyntaxException ex) {
-			LOGGER.log(Level.SEVERE, null, ex);
+			LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
+		} catch (PageHandlerFactoryException ex) {
+			LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
 		}
 		if (!isAborted()) {
 			LOGGER.log(Level.INFO, String.format("%s\n", SYNC_COMPLETE));

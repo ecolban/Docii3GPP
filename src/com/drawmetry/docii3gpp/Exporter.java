@@ -48,7 +48,7 @@ public class Exporter {
 	 */
 	public Exporter(UI ui) {
 		// this.ui = ui;
-		this.db = ui.getDb();
+		this.db = DataAccessObject.getInstance();
 		this.table = Configuration.getTables()[0];
 		this.entries = ui.getEntries();
 	}

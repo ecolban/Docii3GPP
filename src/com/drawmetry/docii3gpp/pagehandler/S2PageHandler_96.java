@@ -64,7 +64,7 @@ public class S2PageHandler_96 implements PageHandler {
 	private String lsSource;
 	private String comment;
 	private String decision;
-	private String table = Configuration.getTables()[0];
+	private String table;
 
 	private final DataAccessObject db;
 
@@ -78,9 +78,10 @@ public class S2PageHandler_96 implements PageHandler {
 	 *            information needed.
 	 * 
 	 */
-	public S2PageHandler_96(UI ui) {
-		this.db = ui.getDb();
-		this.meeting = ui.getMeeting();
+	public S2PageHandler_96(String meeting) {
+		this.db = DataAccessObject.getInstance();
+		this.meeting = meeting;
+		this.table  = Configuration.getTables()[0];
 
 	}
 
@@ -90,7 +91,7 @@ public class S2PageHandler_96 implements PageHandler {
 	 * @param line
 	 * @throws MalformedURLException
 	 */
-	public void readLine(String line) throws MalformedURLException {
+	public void processLine(String line) throws MalformedURLException {
 		Matcher matcher = ENTRY_PATTERNS[lineCount].matcher(line);
 		if (!matcher.matches()) {
 			lineCount = 0;

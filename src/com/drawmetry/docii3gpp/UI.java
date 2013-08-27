@@ -776,11 +776,11 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	public void run() {
 		initComponents();
 		LOGGER.addHandler(new LogHandler(outputArea));
-		db = new DataAccessObject();
+		db = DataAccessObject.getInstance();
 		LOGGER.log(Level.INFO, "{0}: {1}\n", new Object[] { DATABASE_LOCATION,
-				getDb().getDatabaseLocation() });
+				db.getDatabaseLocation() });
 		LOGGER.log(Level.INFO, "{0}: {1}\n", new Object[] { DATABASE_URL,
-				getDb().getDatabaseUrl() });
+				db.getDatabaseUrl() });
 		if (db.connect()) {
 			initComponentsContinued();
 			meetingComboBox.setSelectedIndex(0);
@@ -834,7 +834,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		currentEntry = entry;
 		if (entry != null) {
 			int id = entry.getId();
-			DocumentObject docObj = getDb().getDocumentOject(getTable(), id);
+			DocumentObject docObj = db.getDocumentOject(getTable(), id);
 			if (docObj != null) {
 				fillDocumentFields(docObj);
 			} else {
@@ -853,14 +853,14 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		if (changed && currentEntry != null) {
 			save(currentEntry);
 		}
-		getDb().disconnect();
+		db.disconnect();
 	}
 
 	private void openCurrentDocument() {
 		if (currentEntry == null) {
 			return;
 		}
-		DocumentObject docObj = getDb().getDocumentOject(getTable(),
+		DocumentObject docObj = db.getDocumentOject(getTable(),
 				currentEntry.getId());
 		assert docObj != null;
 		String fileName = docObj.getTDoc();
@@ -1116,7 +1116,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		if (currentEntry == null) {
 			return;
 		}
-		DocumentObject docObj = getDb().getDocumentOject(getTable(),
+		DocumentObject docObj = db.getDocumentOject(getTable(),
 				currentEntry.getId());
 		assert docObj != null;
 		String fileName = docObj.getTDoc();
@@ -1239,7 +1239,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	private void save(DocEntry entry) {
 		if (entry != null) {
 			int id = entry.getId();
-			DocumentObject oldFo = getDb().getDocumentOject(getTable(), id);
+			DocumentObject oldFo = db.getDocumentOject(getTable(), id);
 			if (oldFo == null) {
 				LOGGER.log(Level.WARNING, "{0}.\n", ENTRY_NOT_FOUND_IN_DATABASE);
 				return;
@@ -1255,7 +1255,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 						oldFo.getRevByTDoc(), oldFo.getRevOfTDoc(),
 						oldFo.getLsSource(), oldFo.getComment(),
 						oldFo.getDecision(), notesArea.getText());
-				getDb().editRecord(getTable(), id, newFo);
+				db.editRecord(getTable(), id, newFo);
 			} catch (MalformedURLException ex) {
 				LOGGER.log(Level.SEVERE, null, ex);
 			}
@@ -1264,12 +1264,6 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		}
 	}
 
-	/**
-	 * @return the db
-	 */
-	public DataAccessObject getDb() {
-		return db;
-	}
 
 	/**
 	 * @return the syncLock

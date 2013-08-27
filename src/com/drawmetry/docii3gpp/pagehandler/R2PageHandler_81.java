@@ -58,11 +58,11 @@ public class R2PageHandler_81 implements PageHandler {
 	 *            information needed.
 	 * 
 	 */
-	public R2PageHandler_81(UI ui) {
+	public R2PageHandler_81(String meeting) {
 		this.table = Configuration.getTables()[0];
-		this.meeting = ui.getMeeting();
+		this.meeting = meeting;
 		this.ftpPrefix = Configuration.getFtpPrefix(meeting);
-		this.db = ui.getDb();
+		this.db = DataAccessObject.getInstance();
 
 	}
 
@@ -82,7 +82,7 @@ public class R2PageHandler_81 implements PageHandler {
 	 * @param line
 	 * @throws MalformedURLException
 	 */
-	public void readLine(String line) throws MalformedURLException {
+	public void processLine(String line) throws MalformedURLException {
 		if (oddQuotes) {
 			lineBuilder.append(" ");
 		}

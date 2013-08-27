@@ -64,7 +64,7 @@ public class SPPageHandler_60 implements PageHandler {
 	private String revOfTDoc;
 	private String lsSource;
 	private String comment;
-	private String table = Configuration.getTables()[0];
+	private final String table;
 
 	private final DataAccessObject db;
 
@@ -78,19 +78,20 @@ public class SPPageHandler_60 implements PageHandler {
 	 *            information needed.
 	 * 
 	 */
-	public SPPageHandler_60(UI ui) {
-		this.db = ui.getDb();
-		this.meeting = ui.getMeeting();
+	public SPPageHandler_60(String meeting) {
+		this.db = DataAccessObject.getInstance();
+		this.meeting = meeting;
+		this.table = Configuration.getTables()[0];
 
 	}
-
+	
 	/**
 	 * Handles one line read from the page.
 	 * 
 	 * @param line
 	 * @throws MalformedURLException
 	 */
-	public void readLine(String line) throws MalformedURLException {
+	public void processLine(String line) throws MalformedURLException {
 
 		Matcher matcher = entryPattern[patternIndex].matcher(line);
 		switch (patternIndex) {

@@ -58,11 +58,11 @@ public class RPPageHandler_60 implements PageHandler {
 	 *            information needed.
 	 * 
 	 */
-	public RPPageHandler_60(UI ui) {
+	public RPPageHandler_60(String meeting) {
 		this.table = Configuration.getTables()[0];
-		this.meeting = ui.getMeeting();
+		this.meeting = meeting;
 		this.ftpPrefix = Configuration.getFtpPrefix(meeting);
-		this.db = ui.getDb();
+		this.db = DataAccessObject.getInstance();
 
 	}
 
@@ -80,35 +80,22 @@ public class RPPageHandler_60 implements PageHandler {
 	 * @param line
 	 * @throws MalformedURLException
 	 */
-	public void readLine(String line) throws MalformedURLException {
-		if (oddQuotes) {
-			lineBuilder.append(" ");
-		}
+	public void processLine(String line) throws MalformedURLException {
 		lineBuilder.append(line);
-		if (!(oddQuotes ^= oddQuotes(line))) {
-			processEntry(lineBuilder.toString());
-			lineBuilder.setLength(0);
+		if (oddQuotes ^= oddQuotes(line)) { // entry spans multiple lines
+			lineBuilder.append(" ");
+			return;
 		}
-	}
-
-	private boolean oddQuotes(String line) {
-		boolean result = false;
-		for (int i = 0; i < line.length(); i++) {
-			result ^= line.charAt(i) == '\"';
-		}
-		return result;
-	}
-
-	private void processEntry(String line) {
-		Matcher lineMatcher = LINE_PATTERN.matcher(line);
+		String line1 = lineBuilder.toString();
+		Matcher lineMatcher = LINE_PATTERN.matcher(line1);
 		if (lineMatcher.lookingAt()) {
-			line = line.substring(lineMatcher.start(), lineMatcher.end());
-			Matcher fieldMatcher = CSV_FIELD_PATTERN.matcher(line);
+			line1 = line1.substring(lineMatcher.start(), lineMatcher.end());
+			Matcher fieldMatcher = CSV_FIELD_PATTERN.matcher(line1);
 			String[] fields = new String[16];
 			String field;
 			for (int i = 0; fieldMatcher.find(); i++) {
 				if ((field = fieldMatcher.group(1)) != null) {
-					field = field.replace("\"\"", "\"");
+					field = field.replace("\"\"", "\""); // replace "" with " 
 				} else {
 					field = fieldMatcher.group(2);
 				}
@@ -131,7 +118,6 @@ public class RPPageHandler_60 implements PageHandler {
 				comment = fields[COMMENT_COLUMN] + " *** Related docs: "
 						+ fields[REV_OF_COLUMN];
 			}
-			// System.out.println(Arrays.toString(fields));
 			DocumentObject doc;
 			try {
 				doc = new DocumentObject(-1, meeting, "", agendaTitle, url,
@@ -145,14 +131,23 @@ public class RPPageHandler_60 implements PageHandler {
 
 					db.mergeRecord(table, entry.getId(), doc);
 				}
-//				 System.out.println(doc);
 			} catch (MalformedURLException ex) {
 				Synchronizer.LOGGER.log(Level.SEVERE, ex.getMessage());
 			}
 		}
+		lineBuilder.setLength(0);
 	}
-	
-	 /** Used for test purposes only
+
+	private boolean oddQuotes(String line) {
+		boolean result = false;
+		for (int i = 0; i < line.length(); i++) {
+			result ^= line.charAt(i) == '\"';
+		}
+		return result;
+	}
+
+	/**
+	 * Used for test purposes only
 	 * 
 	 * @param args
 	 *            ignored
@@ -164,8 +159,60 @@ public class RPPageHandler_60 implements PageHandler {
 				+ "to: RAN2; received on Fri of RAN2 #80 as R2-126113 and not treated there but taken into account in email discussion [80#14]; no LS answer,REL-11,COMP_LTE_DL-Core,"
 				+ "\"R1-125392, R2-126113\",,,,,,,,,,,,,,,,";
 		RPPageHandler_60 handler = new RPPageHandler_60();
-		handler.processEntry(line);
+		Matcher lineMatcher = RPPageHandler_60.LINE_PATTERN.matcher(line);
+		if (lineMatcher.lookingAt()) {
+			line = line.substring(lineMatcher.start(), lineMatcher.end());
+			Matcher fieldMatcher = RPPageHandler_60.CSV_FIELD_PATTERN
+					.matcher(line);
+			String[] fields = new String[16];
+			String field;
+			for (int i = 0; fieldMatcher.find(); i++) {
+				if ((field = fieldMatcher.group(1)) != null) {
+					field = field.replace("\"\"", "\"");
+				} else {
+					field = fieldMatcher.group(2);
+				}
+				fields[i] = field;
+			}
+
+			String decision = fields[RPPageHandler_60.DECISION_COLUMN];
+			String agendaTitle = fields[RPPageHandler_60.AGENDA_ITEM_COLUMN];
+			String url = handler.ftpPrefix
+					+ fields[RPPageHandler_60.TDOC_COLUMN] + ".zip";
+			String tDoc = fields[RPPageHandler_60.TDOC_COLUMN];
+			String docTitle = fields[RPPageHandler_60.TITLE_COLUMN];
+			String source = fields[RPPageHandler_60.SOURCE_COLUMN];
+			String docType = fields[RPPageHandler_60.TYPE_COLUMN];
+			String lsSource = fields[RPPageHandler_60.LS_SOURCE_COLUMN];
+			String workItem = fields[RPPageHandler_60.WI_COLUMN];
+			String comment;
+			if (fields[RPPageHandler_60.REV_OF_COLUMN].isEmpty()) {
+				comment = fields[RPPageHandler_60.COMMENT_COLUMN];
+			} else {
+				comment = fields[RPPageHandler_60.COMMENT_COLUMN]
+						+ " *** Related docs: "
+						+ fields[RPPageHandler_60.REV_OF_COLUMN];
+			}
+			// System.out.println(Arrays.toString(fields));
+			DocumentObject doc;
+			try {
+				doc = new DocumentObject(-1, handler.meeting, "", agendaTitle,
+						url, tDoc, docType, docTitle, source, workItem, "", "",
+						lsSource, comment, decision, "");
+				List<DocEntry> entries = handler.db.findEntries(handler.table,
+						doc.getTDoc());
+				if (entries.isEmpty()) {
+					handler.db.saveRecord(handler.table, doc);
+				} else {
+					DocEntry entry = entries.get(0);
+
+					handler.db.mergeRecord(handler.table, entry.getId(), doc);
+				}
+				// System.out.println(doc);
+			} catch (MalformedURLException ex) {
+				Synchronizer.LOGGER.log(Level.SEVERE, ex.getMessage());
+			}
+		}
 	}
-	
 
 }

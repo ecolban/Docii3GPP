@@ -53,17 +53,14 @@ public class SPPageHandler_58 implements PageHandler {
 	private String url;
 	private String docTitle;
 	private String source;
-	private String summary;
 	private String docType;
-	private String docFor;
 	private String decision;
 	// private String workItem;
 	private String revByTDoc;
 	private String revOfTDoc;
 	private String lsSource;
 	private String comment;
-	private String rx;
-	private String table = Configuration.getTables()[0];
+	private String table;
 
 	private final DataAccessObject db;
 
@@ -77,9 +74,10 @@ public class SPPageHandler_58 implements PageHandler {
 	 *            information needed.
 	 * 
 	 */
-	public SPPageHandler_58(UI ui) {
-		this.db = ui.getDb();
-		this.meeting = ui.getMeeting();
+	public SPPageHandler_58(String meeting) {
+		this.db = DataAccessObject.getInstance();
+		this.meeting = meeting;
+		this.table  = Configuration.getTables()[0];
 
 	}
 
@@ -89,7 +87,7 @@ public class SPPageHandler_58 implements PageHandler {
 	 * @param line
 	 * @throws MalformedURLException
 	 */
-	public void readLine(String line) throws MalformedURLException {
+	public void processLine(String line) throws MalformedURLException {
 
 		Matcher matcher = entryPattern[patternIndex].matcher(line);
 		switch (patternIndex) {
@@ -149,7 +147,6 @@ public class SPPageHandler_58 implements PageHandler {
 		case 5:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Doc for
 			if (matcher.matches()) {
-				docFor = matcher.group(1);
 				patternIndex++;
 				break;
 			} else {

@@ -19,6 +19,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 
+import com.drawmetry.docii3gpp.database.DataAccessObject;
+
 /**
  * A dialog for searches in the database
  * 
@@ -264,7 +266,7 @@ public class FilterDialog extends JDialog {
 	}
 
 	private void filter() {
-		entries = parent.getDb().findEntries(parent.getTable(),
+		entries = DataAccessObject.getInstance().findEntries(parent.getTable(),
 				"%" + parent.getMeeting() + "%",
 				"%" + tDocTextField.getText() + "%",
 				"%" + titleTextField.getText() + "%",
