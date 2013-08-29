@@ -4,12 +4,12 @@ import com.drawmetry.docii3gpp.database.DataAccessObject;
 import com.drawmetry.docii3gpp.Configuration;
 import com.drawmetry.docii3gpp.DocEntry;
 import com.drawmetry.docii3gpp.DocumentObject;
-import com.drawmetry.docii3gpp.Synchronizer;
 import com.drawmetry.docii3gpp.UI;
 
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,6 +22,8 @@ import java.util.regex.Pattern;
  *         All Rights Reserved Worldwide
  */
 public class S2PageHandler_96 implements PageHandler {
+	
+	private static final Logger LOGGER = Logger.getLogger("com.drawmetry.docii3gpp");
 
 	private static final Pattern TDOC_PATTERN = Pattern
 			.compile("(<a .* href=\"(.*\\.zip)\">)?([CGRS][1-5P]-\\d{6})(</a>)?");
@@ -199,7 +201,7 @@ public class S2PageHandler_96 implements PageHandler {
 					db.mergeRecord(table, entry.getId(), doc);
 				}
 			} catch (MalformedURLException ex) {
-				Synchronizer.LOGGER.log(Level.SEVERE, null, ex);
+				LOGGER.log(Level.SEVERE, null, ex);
 			}
 			lineCount = 0;
 			break;

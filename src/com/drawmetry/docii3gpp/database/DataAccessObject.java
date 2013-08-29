@@ -3,8 +3,6 @@ package com.drawmetry.docii3gpp.database;
 import com.drawmetry.docii3gpp.Configuration;
 import com.drawmetry.docii3gpp.DocEntry;
 import com.drawmetry.docii3gpp.DocumentObject;
-import com.drawmetry.docii3gpp.UI;
-import com.sun.crypto.provider.RSACipher;
 import com.sun.rowset.WebRowSetImpl;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -23,8 +21,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
-import java.util.ResourceBundle;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import javax.sql.rowset.WebRowSet;
 
 /**
@@ -49,6 +48,7 @@ public class DataAccessObject {
 	private PreparedStatement[] stmtDeleteRecord;
 	private List<Statement> statements = new ArrayList<Statement>();
 	private String[] tables = Configuration.getTables();
+	private static final Logger LOGGER = Logger.getLogger("com.drawmetry.docii3gpp");
 	private static final String ABNORMAL_SHUT_DOWN = "Abnormal shutdown";
 	private static final String NORMAL_SHUT_DOWN = "Normal shutdown";
 	private static final int MEETING_LENGTH = 10;
@@ -145,7 +145,7 @@ public class DataAccessObject {
 			}
 			System.out.println("count = " + count);
 		} catch (SQLException ex) {
-			UI.LOGGER.log(Level.SEVERE, ex.getMessage());
+			LOGGER.log(Level.SEVERE, ex.getMessage());
 		}
 		db.disconnect();
 	}
@@ -226,19 +226,19 @@ public class DataAccessObject {
 		 */
 		try {
 			Class.forName(driver).newInstance();
-			// UI.LOGGER.log(Level.INFO, "Loaded driver:{0}\n", driver);
+			// LOGGER.log(Level.INFO, "Loaded driver:{0}\n", driver);
 		} catch (ClassNotFoundException cnfe) {
-			UI.LOGGER
+			LOGGER
 					.log(Level.SEVERE,
 							"Unable to load the JDBC driver {0}\nPlease check your CLASSPATH.\n",
 							driver);
 			cnfe.printStackTrace(System.err);
 		} catch (InstantiationException ie) {
-			UI.LOGGER.log(Level.SEVERE, "Unable to load the JDBC driver {0}\n",
+			LOGGER.log(Level.SEVERE, "Unable to load the JDBC driver {0}\n",
 					driver);
 			ie.printStackTrace(System.err);
 		} catch (IllegalAccessException iae) {
-			UI.LOGGER.log(Level.SEVERE,
+			LOGGER.log(Level.SEVERE,
 					"Not allowed to access the JDBC driver {0}\n", driver);
 			iae.printStackTrace(System.err);
 		}
@@ -362,13 +362,13 @@ public class DataAccessObject {
 			if (((se.getErrorCode() == 45000) && ("08006".equals(se
 					.getSQLState())))) {
 				// we got the expected exception
-				UI.LOGGER.log(Level.INFO, NORMAL_SHUT_DOWN, dbName);
+				LOGGER.log(Level.INFO, NORMAL_SHUT_DOWN, dbName);
 				// Note that for single database shutdown, the expected
 				// SQL state is "08006", and the error code is 45000.
 			} else {
 				// if the error code or SQLState is different, we have
 				// an unexpected exception (shutdown failed)
-				UI.LOGGER.log(Level.INFO, ABNORMAL_SHUT_DOWN, dbName);
+				LOGGER.log(Level.INFO, ABNORMAL_SHUT_DOWN, dbName);
 				printSQLException(se);
 			}
 		} finally {
@@ -460,7 +460,7 @@ public class DataAccessObject {
 			ResultSet results = stmtSaveNewRecord[index].getGeneratedKeys();
 			if (results.next()) {
 				id = results.getInt(1);
-				UI.LOGGER.log(Level.INFO, "{0} added.\n", doc.getTDoc());
+				LOGGER.log(Level.INFO, "{0} added.\n", doc.getTDoc());
 			}
 		} catch (SQLException sqle) {
 			printSQLException(sqle);
@@ -470,7 +470,7 @@ public class DataAccessObject {
 
 	private String trim(String string, int length) {
 		if (string.length() > length) {
-			UI.LOGGER.log(Level.WARNING, "Field {0} truncated to length {1}",
+			LOGGER.log(Level.WARNING, "Field {0} truncated to length {1}",
 					new Object[] { string, length });
 			return string.substring(0, length - 1) + "~";
 		} else {
@@ -754,7 +754,7 @@ public class DataAccessObject {
 	public static void printSQLException(SQLException e) {
 		// Unwraps the entire exception chain to unveil the real cause of the
 		// Exception.
-		UI.LOGGER.log(Level.SEVERE, e.getMessage());
+		LOGGER.log(Level.SEVERE, e.getMessage());
 		while (e != null) {
 			System.err.println("\n----- SQLException -----");
 			System.err.println("  SQL State:  " + e.getSQLState());

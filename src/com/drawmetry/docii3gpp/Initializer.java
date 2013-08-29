@@ -41,7 +41,7 @@ public class Initializer {
         	LOGGER.log(Level.SEVERE, "dociiconfig.xml not found");
         }
         try {
-            File logFile = new File(System.getProperty("user.home"), ".dociimentor/logfile.txt");
+            File logFile = new File(System.getProperty("user.home"), ".docii3gpp/logfile.txt");
             Handler logFileHandler = new StreamHandler(
                     new FileOutputStream(logFile), new SimpleFormatter());
             LOGGER.addHandler(logFileHandler);

@@ -30,7 +30,7 @@ public class Synchronizer implements Runnable {
 	private static final String STARTING_SYNC = "Starting sync";
 	private static final String SYNC_ABORTED = "Sync aborted";
 	private static final String SYNC_COMPLETE = "Syn complete";
-	public static final Logger LOGGER = Logger
+	private static final Logger LOGGER = Logger
 			.getLogger("com.drawmetry.docii3gpp");
 
 	public Synchronizer(UI ui, URL hostUrl) {
