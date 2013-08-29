@@ -13,7 +13,6 @@ import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Image;
 import java.awt.Insets;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
@@ -30,7 +29,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -85,7 +83,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 @SuppressWarnings("serial")
 public class UI extends JFrame implements Runnable, ClipboardOwner {
 
-	private static final String REVISION = "Revision 1.0.1 (2013-04-25)";
+	private static final String REVISION = "Revision 1.1 (2013-08-28)";
 	private static final String DATABASE_LOCATION = "Database Location";
 	private static final String ENTRY_NOT_FOUND_IN_DATABASE = "Entry not found in database";
 	private static final String NO_ENTRY_SELECTED = "No entry selected";
@@ -112,7 +110,6 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	private boolean syncLock = false;
 	private FilterDialog filterDialog;
 	private List<DocEntry> allEntries;
-	// private List<DocEntry> latestEntries;
 	private Synchronizer synchronizer;
 	private Downloader downLoader;
 
@@ -135,6 +132,63 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	private JButton stopButton;
 
 	private JProgressBar downloadProgressBar;
+
+	private DataAccessObject db;
+	/* State */
+	private boolean changed = false; // true when entry needs to be saved
+	private String  table;
+	// private boolean latest = false; // true when only the latest revision is
+	// to
+	// appear in the entry list
+	private DocumentListener documentChangeListener = new DocumentListener() {
+		@Override
+		public void insertUpdate(DocumentEvent e) {
+			changed = true;
+		}
+
+		@Override
+		public void removeUpdate(DocumentEvent e) {
+			changed = true;
+		}
+
+		@Override
+		public void changedUpdate(DocumentEvent e) {
+			changed = true;
+		}
+	};
+	private class DocEntryRenderer extends DefaultListCellRenderer {
+
+		/**
+		 * Creates a new instance of DocEntryRenderer
+		 */
+		public DocEntryRenderer() {
+		}
+
+		@Override
+		public Component getListCellRendererComponent(JList<?> list,
+				Object value, int index, boolean isSelected,
+				boolean cellHasFocus) {
+			super.getListCellRendererComponent(list, value, index, isSelected,
+					cellHasFocus);
+
+			DocEntry entry = (DocEntry) value;
+			DocumentObject docObj = db.getDocumentOject(getTable(),
+					entry.getId());
+			URL url = docObj.getUrl();
+			File file = null;
+			if(url != null) {
+				file = new File(Configuration.getLocalFilesRoot(),
+					docObj.getUrl().getPath());
+			}
+			if (file != null && file.exists()) {
+				this.setForeground(Color.BLACK);
+			} else {
+				this.setForeground(Color.GRAY);
+			}
+			this.setText(entry.getFileName());
+			return this;
+		}
+	}
 
 	private class PopupListener extends MouseAdapter {
 
@@ -161,66 +215,120 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		}
 	}
 
-	private DataAccessObject db;
-	/* State */
-	private boolean changed = false; // true when entry needs to be saved
-	// private boolean latest = false; // true when only the latest revision is
-	// to
-	// appear in the entry list
-	private DocumentListener documentChangeListener = new DocumentListener() {
-		@Override
-		public void insertUpdate(DocumentEvent e) {
-			changed = true;
-		}
-
-		@Override
-		public void removeUpdate(DocumentEvent e) {
-			changed = true;
-		}
-
-		@Override
-		public void changedUpdate(DocumentEvent e) {
-			changed = true;
-		}
-	};
-
-	private class DocEntryRenderer extends DefaultListCellRenderer {
-
-		/**
-		 * Creates a new instance of DocEntryRenderer
-		 */
-		public DocEntryRenderer() {
-		}
-
-		@Override
-		public Component getListCellRendererComponent(JList<?> list,
-				Object value, int index, boolean isSelected,
-				boolean cellHasFocus) {
-			super.getListCellRendererComponent(list, value, index, isSelected,
-					cellHasFocus);
-
-			DocEntry entry = (DocEntry) value;
-			// String fn = entry.getFileName();
-			File file = Configuration.getLocalFile(currentMeeting,
-					entry.getFileName());
-			if (file.exists()) {
-				this.setForeground(Color.BLACK);
-			} else {
-				this.setForeground(Color.GRAY);
-			}
-			this.setText(entry.getFileName());
-			return this;
-		}
-	}
-
 	public UI() {
 		meetings = Configuration.getMeetings();
 		this.currentMeeting = meetings[meetings.length - 1];
 	}
 
+	/**
+	 * @param args
+	 *            the command line arguments
+	 */
+	public static void main(String args[]) {
+		Configuration.initialize();
+		SwingUtilities.invokeLater(new UI());
+	}
+
+	@Override
+	public void run() {
+		initComponents();
+		LOGGER.addHandler(new LogHandler(outputArea));
+		db = DataAccessObject.getInstance();
+		LOGGER.log(Level.INFO, "{0}: {1}\n", new Object[] { DATABASE_LOCATION,
+				db.getDatabaseLocation() });
+		LOGGER.log(Level.INFO, "{0}: {1}\n",
+				new Object[] { DATABASE_URL, db.getDatabaseUrl() });
+		if (db.connect()) {
+			meetingComboBox.setSelectedIndex(0);
+			setVisible(true);
+		} else {
+			System.exit(1);
+		}
+	}
+
+	/**
+	 * @return the syncLock
+	 */
+	public boolean isSyncLock() {
+		return syncLock;
+	}
+
+	/**
+	 * @param lock
+	 *            the syncLock to set
+	 */
+	public void setSyncLock(boolean lock) {
+
+		synchronizeButton.setEnabled(!lock);
+		downloadButton.setEnabled(!lock);
+		stopButton.setEnabled(lock);
+		this.syncLock = lock;
+		if (!lock) {
+			filter();
+			updateDocumentList();
+		}
+	}
+
+	public String getTable() {
+		if (table == null) {
+			return (table = Configuration.getTables()[0]);
+		} else {
+			return table;
+		}
+	}
+
+	public DocEntry[] getEntries() {
+		return allEntries.toArray(new DocEntry[0]);
+	}
+
+	public String getMeeting() {
+		return currentMeeting;
+	}
+
+	@Override
+	public void lostOwnership(Clipboard clipboard, Transferable contents) {
+	}
+
+	public void setDownloadProgress(final int progress) {
+
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				downloadProgressBar.setValue(progress);
+			}
+		});
+	}
+
+	public void open(File file) {
+		if (file.exists()) {
+			try {
+				file = file.getCanonicalFile();
+				Desktop.getDesktop().open(file);
+			} catch (NullPointerException ex) {
+				LOGGER.log(Level.SEVERE, "{0}\n", ex.getMessage());
+			} catch (UnsupportedOperationException ex) {
+				LOGGER.log(Level.SEVERE, "{0}\n", ex.getMessage());
+			} catch (SecurityException ex) {
+				LOGGER.log(Level.SEVERE, "{0}\n", ex.getMessage());
+			} catch (IOException ex) {
+				LOGGER.log(Level.SEVERE, "{0}\n", ex.getMessage());
+			} catch (IllegalArgumentException ex) {
+				LOGGER.log(Level.SEVERE, "{0} {1}.\n",
+						new String[] { file.getName(), DOES_NOT_EXIST });
+			}
+		}
+	}
+
 	private void initComponents() {
 
+		/* Title and icon */
 		setTitle("Docii 3GPP Edition");
+		try {
+			setIconImage(ImageIO.read(getClass().getResource(
+					"images/consensii.png")));
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, "Cannot load logo.");
+		}
 
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		setMinimumSize(new Dimension(1020, 530));
@@ -246,7 +354,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		JToolBar toolBar = buildToolbar();
 		add(toolBar, BorderLayout.NORTH);
 
-		/* End of too bar */
+		/* End of tool bar */
 
 		/* Scroll pane for the list of documents */
 
@@ -259,237 +367,21 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		subSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
 
 		docTabbedPane = new JTabbedPane();
-		JPanel docPanel = new JPanel();
-		docPanel = new JPanel();
-		docPanel.setFont(new Font("Arial", 0, 18)); // NOI18N
-		docPanel.setMinimumSize(new Dimension(400, 300));
-		docPanel.setPreferredSize(new Dimension(600, 300));
-		docPanel.setLayout(new GridBagLayout());
-
-		JPanel docFieldsPanel = new JPanel();
-		docFieldsPanel.setLayout(new GridBagLayout());
-		GridBagConstraints c = new GridBagConstraints();
-		Insets insets = new Insets(5, 5, 5, 5);
-		int row = 0;
-		
-		
-		Border border = BorderFactory.createLineBorder(Color.GRAY);
-
-		// title
-		JLabel titleLabel = new JLabel();
-		titleLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
-		titleLabel.setText("Title:"); // NOI18N
-		c.anchor = GridBagConstraints.LINE_START;
-		c.gridx = 0;
-		c.gridy = row;
-		c.weightx = 0.0;
-		c.insets = insets;
-		docFieldsPanel.add(titleLabel, c);
-
-		titleTextField = new JTextArea();
-		titleTextField.setEditable(false);
-		titleTextField.setLineWrap(true);
-		titleTextField.setWrapStyleWord(true);
-		titleTextField.setBorder(border);
-		c.gridx = 1;
-		c.gridy = row;
-		c.weightx = 1.0;
-		c.gridwidth = 2;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		docFieldsPanel.add(titleTextField, c);
-		row++;
-
-		// source
-
-		JLabel sourceLabel = new JLabel();
-		sourceLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
-		sourceLabel.setText("Source:"); // NOI18N
-		c.gridx = 0;
-		c.gridy = row;
-		c.weightx = 0.0;
-		c.insets = insets;
-		docFieldsPanel.add(sourceLabel, c);
-
-		sourceTextField = new JTextField(40);
-		sourceTextField.setBorder(border);
-		sourceTextField.setEditable(false);
-		sourceTextField.setBackground(Color.WHITE);
-		c.gridx = 1;
-		c.gridy = row;
-		c.weightx = 1.0;
-		c.gridwidth = 2;
-		docFieldsPanel.add(sourceTextField, c);
-		row++;
-
-		// agenda title
-		JLabel agendaLabel = new JLabel();
-		agendaLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
-		agendaLabel.setText("Agenda:"); // NOI18N
-		c.gridx = 0;
-		c.gridy = row;
-		c.weightx = 0.0;
-		c.insets = insets;
-		docFieldsPanel.add(agendaLabel, c);
-
-		agendaTitleTextField = new JTextArea();
-		agendaTitleTextField.setEditable(false);
-		agendaTitleTextField.setLineWrap(true);
-		agendaTitleTextField.setWrapStyleWord(true);
-		agendaTitleTextField.setBorder(border);
-		c.gridx = 1;
-		c.gridy = row;
-		c.weightx = 1.0;
-		c.gridwidth = 2;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		docFieldsPanel.add(agendaTitleTextField, c);
-		row++;
-
-		// work item
-		JLabel workItemLabel = new JLabel();
-		workItemLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
-		workItemLabel.setText("Work Item:"); // NOI18N
-		c.gridx = 0;
-		c.gridy = row;
-		c.weightx = 0.0;
-		c.insets = insets;
-		docFieldsPanel.add(workItemLabel, c);
-
-		workItemTextField = new JTextField(40);
-		workItemTextField.setEditable(false);
-		workItemTextField.setBorder(border);
-		workItemTextField.setBackground(Color.WHITE);
-		c.gridx = 1;
-		c.gridy = row;
-		c.weightx = 1.0;
-		c.gridwidth = 2;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		docFieldsPanel.add(workItemTextField, c);
-		row++;
-
-		// comment
-		JLabel commentLabel = new JLabel();
-		commentLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
-		commentLabel.setText("Comment:"); // NOI18N
-		c.gridx = 0;
-		c.gridy = row;
-		c.weightx = 0.0;
-		c.insets = insets;
-		docFieldsPanel.add(commentLabel, c);
-
-		commentTextArea = new JTextArea();
-		commentTextArea.setEditable(false);
-		commentTextArea.setLineWrap(true);
-		commentTextArea.setWrapStyleWord(true);
-		commentTextArea.setBorder(border);
-		c.gridx = 1;
-		c.gridy = row;
-		c.weightx = 1.0;
-		c.gridwidth = 2;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		docFieldsPanel.add(commentTextArea, c);
-		row ++;
-
-		// revised by / revision of
-		JLabel revLabel = new JLabel();
-		revLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
-		revLabel.setText("Rev from / to:"); // NOI18N
-		c.gridx = 0;
-		c.gridy = row;
-		c.gridwidth = 1;
-		c.weightx = 0.0;
-		c.insets = insets;
-		docFieldsPanel.add(revLabel, c);
-
-		revOfTextField = new JTextField(40);
-		revOfTextField.setBorder(border);
-		revOfTextField.setEditable(false);
-		revOfTextField.setBackground(Color.WHITE);
-		c.gridx = 1;
-		c.gridy = row;
-		c.weightx = 1.0;
-		c.gridwidth = 1;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		docFieldsPanel.add(revOfTextField, c);
-
-		revByTextField = new JTextField(40);
-		revByTextField.setBorder(border);
-		revByTextField.setEditable(false);
-		revByTextField.setBackground(Color.WHITE);
-		c.gridx = 2;
-		c.gridy = row;
-		c.weightx = 1.0;
-		c.gridwidth = 1;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		docFieldsPanel.add(revByTextField, c);
-		row++;
-
-		// decision
-		JLabel decisionLabel = new JLabel();
-		decisionLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
-		decisionLabel.setText("Decision:"); // NOI18N
-		c.gridx = 0;
-		c.gridy = row;
-		c.weightx = 0.0;
-		c.insets = insets;
-		docFieldsPanel.add(decisionLabel, c);
-
-		decisionTextField = new JTextField(40);
-		decisionTextField.setBorder(border);
-		decisionTextField.setEditable(false);
-		decisionTextField.setBackground(Color.WHITE);
-		c.gridx = 1;
-		c.gridy = row;
-		c.weightx = 1.0;
-		c.gridwidth = 2;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		docFieldsPanel.add(decisionTextField, c);
-		row++;
-
-		c.anchor = GridBagConstraints.FIRST_LINE_START;
-		c.gridx = 0;
-		c.gridy = 0;
-		c.weighty = 0.0;
-		docPanel.add(docFieldsPanel, c);
-
-		/* Notes */
-		JScrollPane notesScrollPane = new JScrollPane();
-		notesScrollPane
-				.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		notesArea = new JTextArea();
-		notesArea.setLineWrap(true);
-		notesArea.setRows(7);
-		notesArea.setToolTipText("Notes"); // NOI18N
-		notesArea.setWrapStyleWord(true);
-		URL url = UI.class.getResource("dict/");
-		SpellChecker.registerDictionaries(url, "en", null, ".ortho");
-		SpellChecker.register(notesArea);
-
-		notesScrollPane.setViewportView(notesArea);
-
-		c.gridx = 0;
-		c.gridy = 1;
-		c.weighty = 1.0;
-		c.fill = GridBagConstraints.BOTH;
-		docPanel.add(notesScrollPane, c);
-
+		JPanel docPanel = buildDocPanel();
 		docTabbedPane.add(docPanel);
 		subSplitPane.setTopComponent(docTabbedPane);
 
-		/* Output */
+		/* Output area */
 		JScrollPane outputScrollPane = new JScrollPane();
-		outputArea = new JTextArea();
 
 		outputScrollPane
 				.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		outputScrollPane.setMaximumSize(new Dimension(32767, 50));
 		outputScrollPane.setMinimumSize(new Dimension(23, 50));
 
-		outputArea.setColumns(20);
-		outputArea.setEditable(false);
-		outputArea.setRows(5);
-		outputArea.setToolTipText("Messages"); // NOI18N
+		JTextArea outputArea = buildOutputArea();
 		outputScrollPane.setViewportView(outputArea);
-
+		/* End of output area */
 		subSplitPane.setBottomComponent(outputScrollPane);
 
 		mainSplitPane.setRightComponent(subSplitPane);
@@ -501,68 +393,10 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 
 		pack();
 
+		/* Filter dialog */
 		filterDialog = new FilterDialog(this, true);
-	}
+		/* End of filter dialog */
 
-	private JScrollPane buildDocumentListScrollPane() {
-		JScrollPane documentScrollPane = new JScrollPane();
-		documentList = new JList<DocEntry>();
-
-		documentScrollPane.setPreferredSize(new Dimension(200, 200));
-
-		documentList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		documentList.setToolTipText("Doble-click to open document"); // NOI18N
-		documentList.addMouseListener(new MouseAdapter() {
-			public void mouseClicked(MouseEvent evt) {
-				if (evt.getClickCount() == 2) {
-					openCurrentDocument();
-				}
-			}
-		});
-		documentList.addListSelectionListener(new ListSelectionListener() {
-			public void valueChanged(ListSelectionEvent evt) {
-				documentListValueChanged(evt);
-			}
-		});
-		documentScrollPane.setViewportView(documentList);
-		return documentScrollPane;
-	}
-
-	private JPopupMenu buildPopupMenu() {
-		/*
-		 * Pop Up Menu
-		 */
-		JPopupMenu popupMenu = new JPopupMenu();
-
-		JMenuItem copyDocId = new JMenuItem();
-		copyDocId.setText("Copy TDoc #"); // NOI18N
-		copyDocId.setToolTipText("");
-		copyDocId.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent evt) {
-				copyDocIdActionPerformed(evt);
-			}
-		});
-		popupMenu.add(copyDocId);
-
-		JMenuItem copyURL = new JMenuItem();
-		copyURL.setText("Copy URL"); // NOI18N
-		copyURL.setToolTipText("Copy URL"); // NOI18N
-		copyURL.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent evt) {
-				copyURLActionPerformed(evt);
-			}
-		});
-		popupMenu.add(copyURL);
-
-		JMenuItem deleteEntry = new JMenuItem();
-		deleteEntry.setText("Delete entry"); // NOI18N
-		deleteEntry.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent evt) {
-				deleteEntryActionPerformed(evt);
-			}
-		});
-		popupMenu.add(deleteEntry);
-		return popupMenu;
 	}
 
 	private JMenuBar buildMenuBar() {
@@ -748,7 +582,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 
 		stopButton = new JButton();
 		stopButton.setIcon(new ImageIcon(getClass().getResource(
-				"/com/drawmetry/docii3gpp/images/stop2_32.png"))); // NOI18N
+				"images/stop2_32.png"))); // NOI18N
 		stopButton.setBorder(null);
 		stopButton.setIconTextGap(0);
 		stopButton.setMaximumSize(new Dimension(32, 22));
@@ -759,59 +593,296 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 				stopButtonActionPerformed(evt);
 			}
 		});
+		stopButton.setEnabled(false);
 		toolBar.add(stopButton);
 		return toolBar;
 	}
 
-	/**
-	 * @param args
-	 *            the command line arguments
-	 */
-	public static void main(String args[]) {
-		Configuration.initialize();
-		SwingUtilities.invokeLater(new UI());
-	}
+	private JScrollPane buildDocumentListScrollPane() {
+		JScrollPane documentScrollPane = new JScrollPane();
+		documentList = new JList<DocEntry>();
 
-	@Override
-	public void run() {
-		initComponents();
-		LOGGER.addHandler(new LogHandler(outputArea));
-		db = DataAccessObject.getInstance();
-		LOGGER.log(Level.INFO, "{0}: {1}\n", new Object[] { DATABASE_LOCATION,
-				db.getDatabaseLocation() });
-		LOGGER.log(Level.INFO, "{0}: {1}\n", new Object[] { DATABASE_URL,
-				db.getDatabaseUrl() });
-		if (db.connect()) {
-			initComponentsContinued();
-			meetingComboBox.setSelectedIndex(0);
-			setVisible(true);
-		} else {
-			System.exit(1);
-		}
-	}
+		documentScrollPane.setPreferredSize(new Dimension(200, 200));
 
-	private void initComponentsContinued() {
-		Image icon = null;
-		try {
-			URL iconURL = UI.class.getResource("images/consensii.png");
-			if (iconURL != null) {
-				icon = ImageIO.read(iconURL);
-			} else {
-				System.err.println("Cannot load logo.");
+		documentList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		documentList.setToolTipText("Doble-click to open document"); // NOI18N
+		documentList.addMouseListener(new MouseAdapter() {
+			public void mouseClicked(MouseEvent evt) {
+				if (evt.getClickCount() == 2) {
+					openCurrentDocument();
+				}
 			}
-		} catch (IOException ex) {
-			System.err.println("Cannot load logo.");
-		}
-		if (icon != null) {
-			setIconImage(icon);
-		}
-		stopButton.setEnabled(false);
-
+		});
+		documentList.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent evt) {
+				documentListValueChanged(evt);
+			}
+		});
 		documentList.setCellRenderer(new DocEntryRenderer());
 		documentList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		documentList.addMouseListener(new PopupListener(buildPopupMenu()));
+		documentScrollPane.setViewportView(documentList);
+		return documentScrollPane;
+	}
 
+	private JPanel buildDocPanel() {
+		JPanel docPanel;
+		docPanel = new JPanel();
+		docPanel.setFont(new Font("Arial", 0, 18)); // NOI18N
+		docPanel.setMinimumSize(new Dimension(400, 300));
+		docPanel.setPreferredSize(new Dimension(600, 300));
+		docPanel.setLayout(new GridBagLayout());
+
+		JPanel docFieldsPanel = new JPanel();
+		docFieldsPanel.setLayout(new GridBagLayout());
+		GridBagConstraints c = new GridBagConstraints();
+		Insets insets = new Insets(5, 5, 5, 5);
+		int row = 0;
+
+		Border border = BorderFactory.createLineBorder(Color.GRAY);
+
+		// title
+		JLabel titleLabel = new JLabel();
+		titleLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
+		titleLabel.setText("Title:"); // NOI18N
+		c.anchor = GridBagConstraints.LINE_START;
+		c.gridx = 0;
+		c.gridy = row;
+		c.weightx = 0.0;
+		c.insets = insets;
+		docFieldsPanel.add(titleLabel, c);
+
+		titleTextField = new JTextArea();
+		titleTextField.setEditable(false);
+		titleTextField.setLineWrap(true);
+		titleTextField.setWrapStyleWord(true);
+		titleTextField.setBorder(border);
+		c.gridx = 1;
+		c.gridy = row;
+		c.weightx = 1.0;
+		c.gridwidth = 2;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		docFieldsPanel.add(titleTextField, c);
+		row++;
+
+		// source
+
+		JLabel sourceLabel = new JLabel();
+		sourceLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
+		sourceLabel.setText("Source:"); // NOI18N
+		c.gridx = 0;
+		c.gridy = row;
+		c.weightx = 0.0;
+		c.insets = insets;
+		docFieldsPanel.add(sourceLabel, c);
+
+		sourceTextField = new JTextField(40);
+		sourceTextField.setBorder(border);
+		sourceTextField.setEditable(false);
+		sourceTextField.setBackground(Color.WHITE);
+		c.gridx = 1;
+		c.gridy = row;
+		c.weightx = 1.0;
+		c.gridwidth = 2;
+		docFieldsPanel.add(sourceTextField, c);
+		row++;
+
+		// agenda title
+		JLabel agendaLabel = new JLabel();
+		agendaLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
+		agendaLabel.setText("Agenda:"); // NOI18N
+		c.gridx = 0;
+		c.gridy = row;
+		c.weightx = 0.0;
+		c.insets = insets;
+		docFieldsPanel.add(agendaLabel, c);
+
+		agendaTitleTextField = new JTextArea();
+		agendaTitleTextField.setEditable(false);
+		agendaTitleTextField.setLineWrap(true);
+		agendaTitleTextField.setWrapStyleWord(true);
+		agendaTitleTextField.setBorder(border);
+		c.gridx = 1;
+		c.gridy = row;
+		c.weightx = 1.0;
+		c.gridwidth = 2;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		docFieldsPanel.add(agendaTitleTextField, c);
+		row++;
+
+		// work item
+		JLabel workItemLabel = new JLabel();
+		workItemLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
+		workItemLabel.setText("Work Item:"); // NOI18N
+		c.gridx = 0;
+		c.gridy = row;
+		c.weightx = 0.0;
+		c.insets = insets;
+		docFieldsPanel.add(workItemLabel, c);
+
+		workItemTextField = new JTextField(40);
+		workItemTextField.setEditable(false);
+		workItemTextField.setBorder(border);
+		workItemTextField.setBackground(Color.WHITE);
+		c.gridx = 1;
+		c.gridy = row;
+		c.weightx = 1.0;
+		c.gridwidth = 2;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		docFieldsPanel.add(workItemTextField, c);
+		row++;
+
+		// comment
+		JLabel commentLabel = new JLabel();
+		commentLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
+		commentLabel.setText("Comment:"); // NOI18N
+		c.gridx = 0;
+		c.gridy = row;
+		c.weightx = 0.0;
+		c.insets = insets;
+		docFieldsPanel.add(commentLabel, c);
+
+		commentTextArea = new JTextArea();
+		commentTextArea.setEditable(false);
+		commentTextArea.setLineWrap(true);
+		commentTextArea.setWrapStyleWord(true);
+		commentTextArea.setBorder(border);
+		c.gridx = 1;
+		c.gridy = row;
+		c.weightx = 1.0;
+		c.gridwidth = 2;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		docFieldsPanel.add(commentTextArea, c);
+		row++;
+
+		// revised by / revision of
+		JLabel revLabel = new JLabel();
+		revLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
+		revLabel.setText("Rev from / to:"); // NOI18N
+		c.gridx = 0;
+		c.gridy = row;
+		c.gridwidth = 1;
+		c.weightx = 0.0;
+		c.insets = insets;
+		docFieldsPanel.add(revLabel, c);
+
+		revOfTextField = new JTextField(40);
+		revOfTextField.setBorder(border);
+		revOfTextField.setEditable(false);
+		revOfTextField.setBackground(Color.WHITE);
+		c.gridx = 1;
+		c.gridy = row;
+		c.weightx = 1.0;
+		c.gridwidth = 1;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		docFieldsPanel.add(revOfTextField, c);
+
+		revByTextField = new JTextField(40);
+		revByTextField.setBorder(border);
+		revByTextField.setEditable(false);
+		revByTextField.setBackground(Color.WHITE);
+		c.gridx = 2;
+		c.gridy = row;
+		c.weightx = 1.0;
+		c.gridwidth = 1;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		docFieldsPanel.add(revByTextField, c);
+		row++;
+
+		// decision
+		JLabel decisionLabel = new JLabel();
+		decisionLabel.setFont(new Font("SansSerif", 0, 11)); // NOI18N
+		decisionLabel.setText("Decision:"); // NOI18N
+		c.gridx = 0;
+		c.gridy = row;
+		c.weightx = 0.0;
+		c.insets = insets;
+		docFieldsPanel.add(decisionLabel, c);
+
+		decisionTextField = new JTextField(40);
+		decisionTextField.setBorder(border);
+		decisionTextField.setEditable(false);
+		decisionTextField.setBackground(Color.WHITE);
+		c.gridx = 1;
+		c.gridy = row;
+		c.weightx = 1.0;
+		c.gridwidth = 2;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		docFieldsPanel.add(decisionTextField, c);
+		row++;
+
+		c.anchor = GridBagConstraints.FIRST_LINE_START;
+		c.gridx = 0;
+		c.gridy = 0;
+		c.weighty = 0.0;
+		docPanel.add(docFieldsPanel, c);
+
+		/* Notes */
+		JScrollPane notesScrollPane = new JScrollPane();
+		notesScrollPane
+				.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		notesArea = new JTextArea();
+		notesArea.setLineWrap(true);
+		notesArea.setRows(7);
+		notesArea.setToolTipText("Notes"); // NOI18N
+		notesArea.setWrapStyleWord(true);
+		URL url = UI.class.getResource("dict/");
+		SpellChecker.registerDictionaries(url, "en", null, ".ortho");
+		SpellChecker.register(notesArea);
 		notesArea.getDocument().addDocumentListener(documentChangeListener);
+		notesScrollPane.setViewportView(notesArea);
+		c.gridx = 0;
+		c.gridy = 1;
+		c.weighty = 1.0;
+		c.fill = GridBagConstraints.BOTH;
+		docPanel.add(notesScrollPane, c);
+		return docPanel;
+	}
+
+	private JTextArea buildOutputArea() {
+		outputArea = new JTextArea();
+		outputArea.setColumns(20);
+		outputArea.setEditable(false);
+		outputArea.setRows(5);
+		outputArea.setToolTipText("Messages"); // NOI18N
+		return outputArea;
+	}
+
+	private JPopupMenu buildPopupMenu() {
+		/*
+		 * Pop Up Menu
+		 */
+		JPopupMenu popupMenu = new JPopupMenu();
+
+		JMenuItem copyDocId = new JMenuItem();
+		copyDocId.setText("Copy TDoc #"); // NOI18N
+		copyDocId.setToolTipText("");
+		copyDocId.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				copyDocIdActionPerformed(evt);
+			}
+		});
+		popupMenu.add(copyDocId);
+
+		JMenuItem copyURL = new JMenuItem();
+		copyURL.setText("Copy URL"); // NOI18N
+		copyURL.setToolTipText("Copy URL"); // NOI18N
+		copyURL.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				copyURLActionPerformed(evt);
+			}
+		});
+		popupMenu.add(copyURL);
+
+		JMenuItem deleteEntry = new JMenuItem();
+		deleteEntry.setText("Delete entry"); // NOI18N
+		deleteEntry.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				deleteEntryActionPerformed(evt);
+			}
+		});
+		popupMenu.add(deleteEntry);
+		return popupMenu;
 	}
 
 	private void selectMeeting(int i) {
@@ -857,41 +928,37 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	}
 
 	private void openCurrentDocument() {
-		if (currentEntry == null) {
+		if (currentEntry == null || isSyncLock()) {
 			return;
 		}
-		DocumentObject docObj = db.getDocumentOject(getTable(),
+		final DocumentObject docObj = db.getDocumentOject(getTable(),
 				currentEntry.getId());
 		assert docObj != null;
 		String fileName = docObj.getTDoc();
 		assert fileName != null;
-		File file = Configuration.getLocalFile(currentMeeting, fileName);
+		File file = new File(Configuration.getLocalFilesRoot(), docObj.getUrl()
+				.getPath());
 		if (!file.exists()) {
+			setSyncLock(true);
 			int answer = JOptionPane.showConfirmDialog(this,
 					"File not found locally. Download now?", "Download",
 					JOptionPane.YES_NO_OPTION);
 			if (answer == JOptionPane.YES_OPTION) {
-				Downloader dl = new Downloader(this);
-				dl.downloadNow(docObj);
-				documentList.repaint();
+				final Downloader dl = new Downloader(this);
+
+				Thread downloadThread = new Thread(new Runnable() {
+
+					@Override
+					public void run() {
+						dl.downloadAndOpen(docObj);
+					}
+				});
+				downloadThread.start();
+			} else {
+				setSyncLock(false);
 			}
-		}
-		if (file.exists()) {
-			try {
-				file = file.getCanonicalFile();
-				Desktop.getDesktop().open(file);
-			} catch (NullPointerException ex) {
-				LOGGER.log(Level.SEVERE, "{0}\n", ex.getMessage());
-			} catch (UnsupportedOperationException ex) {
-				LOGGER.log(Level.SEVERE, "{0}\n", ex.getMessage());
-			} catch (SecurityException ex) {
-				LOGGER.log(Level.SEVERE, "{0}\n", ex.getMessage());
-			} catch (IOException ex) {
-				LOGGER.log(Level.SEVERE, "{0}\n", ex.getMessage());
-			} catch (IllegalArgumentException ex) {
-				LOGGER.log(Level.SEVERE, "{0} {1}.\n", new String[] { fileName,
-						DOES_NOT_EXIST });
-			}
+		} else {
+			open(file);
 		}
 	}
 
@@ -914,8 +981,6 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 			Thread syncThread = new Thread(synchronizer);
 			syncThread.start();
 		}
-		filter();
-		updateDocumentList();
 	}
 
 	private void downloadButtonActionPerformed(ActionEvent evt) {
@@ -924,7 +989,6 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 			downLoader = new Downloader(this);
 			Thread downloadThread = new Thread(downLoader);
 			downloadThread.start();
-			stopButton.setEnabled(true);
 		}
 	}
 
@@ -985,9 +1049,6 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 			if (currentEntry != null) {
 				db.deleteRecord(getTable(), currentEntry.getId());
 				allEntries.remove(currentEntry);
-				// if (latestEntries != null) {
-				// latestEntries.remove(currentEntry);
-				// }
 				updateDocumentList();
 			}
 		}
@@ -1039,7 +1100,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 						+ "<tr>"
 						+ "<td valign='center'>"
 						+ "<img src=\""
-						+ UI.class.getResource("images/consensii.png")
+						+ getClass().getResource("images/consensii.png")
 								.toExternalForm()
 						+ "\">"
 						+ "</td>"
@@ -1119,9 +1180,8 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		DocumentObject docObj = db.getDocumentOject(getTable(),
 				currentEntry.getId());
 		assert docObj != null;
-		String fileName = docObj.getTDoc();
-		assert fileName != null;
-		File file = Configuration.getLocalFile(currentMeeting, fileName);
+		File file = new File(Configuration.getLocalFilesRoot(), docObj.getUrl()
+				.getPath());
 		if (file.exists()) {
 			file.delete();
 			documentList.repaint();
@@ -1157,28 +1217,6 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	private void refreshListEntries() {
 		DocEntry[] data = allEntries.toArray(new DocEntry[0]);
 		documentList.setListData(data);
-		// return;
-		// latestEntries = new ArrayList<DocEntry>(allEntries.size());
-		// DocEntry prevEntry = null;
-		// for (DocEntry entry : allEntries) {
-		// int i = entry.compare(prevEntry);
-		// if (prevEntry == null || i > 0) {
-		// prevEntry = entry;
-		// } else if (i == 0) {
-		// latestEntries.add(prevEntry);
-		// prevEntry = entry;
-		// }
-		// }
-		// if (prevEntry != null) {
-		// latestEntries.add(prevEntry);
-		// }
-		// DocEntry[] data = latestEntries.toArray(new DocEntry[0]);
-		// documentList.setListData(data);
-
-	}
-
-	public int getSelectedIndex() {
-		return documentList.getSelectedIndex();
 	}
 
 	private int setSelectedIndex(int index) {
@@ -1200,13 +1238,6 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		changed = false;
 		return index;
 	}
-
-	public DocEntry getSelectedListEntry() {
-		DocEntry entry = (DocEntry) documentList.getSelectedValue();
-		return entry;
-	}
-
-	// End of variables declaration
 
 	private void fillDocumentFields(DocumentObject fo) {
 
@@ -1239,79 +1270,29 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	private void save(DocEntry entry) {
 		if (entry != null) {
 			int id = entry.getId();
-			DocumentObject oldFo = db.getDocumentOject(getTable(), id);
-			if (oldFo == null) {
+			DocumentObject oldDocObj = db.getDocumentOject(getTable(), id);
+			if (oldDocObj == null) {
 				LOGGER.log(Level.WARNING, "{0}.\n", ENTRY_NOT_FOUND_IN_DATABASE);
 				return;
 			}
 			try {
-				URL oldUrl = oldFo.getUrl();
-				DocumentObject newFo = new DocumentObject(id,
-						oldFo.getMeeting(), oldFo.getAgendaItem(),
-						oldFo.getAgendaTitle(), oldUrl == null ? null
-								: oldUrl.toString(), oldFo.getTDoc(),
-						oldFo.getDocType(), oldFo.getDocTitle(),
-						oldFo.getSource(), oldFo.getWorkItem(),
-						oldFo.getRevByTDoc(), oldFo.getRevOfTDoc(),
-						oldFo.getLsSource(), oldFo.getComment(),
-						oldFo.getDecision(), notesArea.getText());
-				db.editRecord(getTable(), id, newFo);
+				URL oldUrl = oldDocObj.getUrl();
+				DocumentObject newDocObj = new DocumentObject(id,
+						oldDocObj.getMeeting(), oldDocObj.getAgendaItem(),
+						oldDocObj.getAgendaTitle(), oldUrl == null ? null
+								: oldUrl.toString(), oldDocObj.getTDoc(),
+						oldDocObj.getDocType(), oldDocObj.getDocTitle(),
+						oldDocObj.getSource(), oldDocObj.getWorkItem(),
+						oldDocObj.getRevByTDoc(), oldDocObj.getRevOfTDoc(),
+						oldDocObj.getLsSource(), oldDocObj.getComment(),
+						oldDocObj.getDecision(), notesArea.getText());
+				db.editRecord(getTable(), id, newDocObj);
 			} catch (MalformedURLException ex) {
 				LOGGER.log(Level.SEVERE, null, ex);
 			}
 		} else {
 			LOGGER.log(Level.WARNING, "{0}.\n", NO_ENTRY_SELECTED);
 		}
-	}
-
-
-	/**
-	 * @return the syncLock
-	 */
-	public boolean isSyncLock() {
-		return syncLock;
-	}
-
-	/**
-	 * @param lock
-	 *            the syncLock to set
-	 */
-	public void setSyncLock(boolean lock) {
-
-		synchronizeButton.setEnabled(!lock);
-		downloadButton.setEnabled(!lock);
-		stopButton.setEnabled(lock);
-		this.syncLock = lock;
-		if (!lock) {
-			filter();
-			updateDocumentList();
-		}
-	}
-
-	public List<DocumentObject> getDocsToDownload() {
-		List<DocEntry> entries = allEntries;
-		List<DocumentObject> docs = new ArrayList<DocumentObject>(
-				entries.size());
-		for (DocEntry e : entries) {
-			docs.add(db.getDocumentOject(getTable(), e.getId()));
-		}
-		return docs;
-	}
-
-	public String getTable() {
-		return Configuration.getTables()[0];
-	}
-
-	public DocEntry[] getEntries() {
-		return allEntries.toArray(new DocEntry[0]);
-	}
-
-	@Override
-	public void lostOwnership(Clipboard clipboard, Transferable contents) {
-	}
-
-	public String getMeeting() {
-		return currentMeeting;
 	}
 
 	private void meetingComboBoxActionPerformed(ActionEvent evt) {// GEN-FIRST:event_workingGroupComboBoxActionPerformed
@@ -1321,15 +1302,5 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		documentList.clearSelection();
 		int i = meetingComboBox.getSelectedIndex();
 		selectMeeting(i);
-	}
-
-	public void setDownloadProgress(final int progress) {
-
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				downloadProgressBar.setValue(progress);
-			}
-		});
 	}
 }

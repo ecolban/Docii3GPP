@@ -6,6 +6,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -14,6 +15,7 @@ import java.util.logging.Logger;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -37,7 +39,7 @@ public class Configuration extends DefaultHandler {
 	private String derbyUrl;
 	private String schema;
 	private File systemHome;
-	private File localFilesRoot;
+	private static File localFilesRoot;
 	private String host;
 	private static Configuration instance;
 	private String database;
@@ -58,7 +60,7 @@ public class Configuration extends DefaultHandler {
 	}
 
 	private class Meeting {
-		private final URL tDocUrl;
+		private final URL tDocLocation;
 		private final File localDirectory;
 		private final String remoteDir;
 		private final String remoteDirAlt;
@@ -68,7 +70,7 @@ public class Configuration extends DefaultHandler {
 				String remoteDirAlt, String ftpPrefix)
 				throws MalformedURLException {
 			File localDirectory = new File(localFilesRoot, localDir);
-			this.tDocUrl = tDocUrl;
+			this.tDocLocation = tDocUrl;
 			this.localDirectory = localDirectory;
 			this.remoteDir = remoteDir;
 			this.remoteDirAlt = remoteDirAlt;
@@ -78,6 +80,12 @@ public class Configuration extends DefaultHandler {
 	}
 
 	public static void main(String[] args) {
+		Configuration.initialize();
+		for (Iterator<String> iterator = Configuration.meetings.keySet()
+				.iterator(); iterator.hasNext();) {
+			Meeting meeting = meetings.get(iterator.next());
+			System.out.println(meeting.tDocLocation);
+		}
 	}
 
 	public static void initialize() {
@@ -181,6 +189,10 @@ public class Configuration extends DefaultHandler {
 		String[] a = new String[0];
 		return meetingNames.toArray(a);
 	}
+	
+	public static File getLocalFilesRoot() {
+		return localFilesRoot;
+	}
 
 	public static File getLocalDirectory(String meetingName) {
 
@@ -198,7 +210,7 @@ public class Configuration extends DefaultHandler {
 	}
 
 	public static URL getTDocList(String meetingName) {
-		return Configuration.meetings.get(meetingName).tDocUrl;
+		return Configuration.meetings.get(meetingName).tDocLocation;
 	}
 
 	public static File getLocalFile(String meeting, String fileName) {
@@ -210,29 +222,7 @@ public class Configuration extends DefaultHandler {
 		return Configuration.meetings.get(meetingName).ftpPrefix;
 	}
 
-	private void parseDocument() {
-
-		// get a factory
-		SAXParserFactory factory = SAXParserFactory.newInstance();
-		try {
-
-			// get a new instance of parser
-			SAXParser parser = factory.newSAXParser();
-
-			// parse the file and also register this class for call backs
-			parser.parse(configFile, this);
-
-		} catch (ParserConfigurationException ex) {
-			Logger.getLogger("com.drawmetry.docii3gpp").log(Level.SEVERE, null,
-					ex);
-		} catch (SAXException ex) {
-			Logger.getLogger("com.drawmetry.docii3gpp").log(Level.SEVERE, null,
-					ex);
-		} catch (IOException ex) {
-			Logger.getLogger("com.drawmetry.docii3gpp").log(Level.SEVERE, null,
-					ex);
-		}
-	}
+	
 
 	// Event Handlers
 
@@ -264,6 +254,30 @@ public class Configuration extends DefaultHandler {
 	public void endElement(String uri, String localName, String qName)
 			throws SAXException {
 
+	}
+
+	private void parseDocument() {
+	
+		// get a factory
+		SAXParserFactory factory = SAXParserFactory.newInstance();
+		try {
+	
+			// get a new instance of parser
+			SAXParser parser = factory.newSAXParser();
+	
+			// parse the file and also register this class for call backs
+			parser.parse(configFile, this);
+	
+		} catch (ParserConfigurationException ex) {
+			Logger.getLogger("com.drawmetry.docii3gpp").log(Level.SEVERE, null,
+					ex);
+		} catch (SAXException ex) {
+			Logger.getLogger("com.drawmetry.docii3gpp").log(Level.SEVERE, null,
+					ex);
+		} catch (IOException ex) {
+			Logger.getLogger("com.drawmetry.docii3gpp").log(Level.SEVERE, null,
+					ex);
+		}
 	}
 
 	private void startDerby(Attributes atts) throws SAXException {
@@ -366,14 +380,26 @@ public class Configuration extends DefaultHandler {
 			localDir = remoteDir;
 		}
 		if (meetingName != null && urlString != null && remoteDir != null) {
+			URL url = null;
 			try {
-				URL url = new URL(urlString);
-				// File localDirectory = new File(localFilesRoot, localDir);
+				if (urlString.matches("ftp://ftp\\.3gpp\\.org/.*")) {
+					url = new URL(urlString);
+				} else {
+					File file = new File(urlString);
+					if (!file.isAbsolute()) {
+						file = new File(System.getProperty("user.home"),
+								file.getPath());
+					}
+					url = file.toURI().toURL();
+
+				}
 				Configuration.meetings.put(meetingName, new Meeting(url,
 						localDir, remoteDir, remoteDirAlt, ftpPrefix));
 				Configuration.meetingNames.add(meetingName);
 			} catch (MalformedURLException e) {
-				LOGGER.log(Level.SEVERE, e.getMessage());
+				LOGGER.log(Level.SEVERE,
+						"Could not resolve the URL of meeting: {0}",
+						meetingName);
 			}
 		}
 	}

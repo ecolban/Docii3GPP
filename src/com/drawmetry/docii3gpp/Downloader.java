@@ -36,50 +36,46 @@ public class Downloader implements Runnable {
 	private static final String DOWNLOAD_ABORTED = "Download aborted.";
 	private static final String STARTING_DOWNLOAD = "Starting download";
 	private static final String DOWNLOAD_COMPLETE = "Download complete";
-	private final UI gui;
+	private final UI ui;
 	private boolean abortFlag = false;
 
-	public Downloader(UI gui) {
-		this.gui = gui;
+	public Downloader(UI ui) {
+		this.ui = ui;
 	}
 
 	@Override
 	public void run() {
 		UI.LOGGER.log(Level.INFO, String.format("%s\n", STARTING_DOWNLOAD));
 
-		String meeting = gui.getMeeting();
+		String meeting = ui.getMeeting();
 		File localDir = Configuration.getLocalDirectory(meeting);
 		String hostname = Configuration.getHost();
 		// String inboxDir = Configuration.getRemoteDirectoryAlt(meeting);
 		if (!localDir.exists()) {
 			localDir.mkdirs();
 		}
-		FTPClient client = new FTPClient();
-
+		FTPClient client = null;
 		try {
-			client.connect(hostname);
-			int reply = client.getReplyCode();
-			if (!FTPReply.isPositiveCompletion(reply)) {
-				UI.LOGGER.log(Level.INFO, "FTP server refused connection.");
-				return;
-			}
-
-			client.login(FTP_USERNAME, FTP_PASSWORD);
-			client.enterLocalPassiveMode();
-			client.setFileType(FTP.BINARY_FILE_TYPE);
+			client = openFtpConnection(hostname);
 			String remoteDir = Configuration.getRemoteDirectory(meeting);
-			UI.LOGGER.log(Level.INFO, "From Docs folder:\n");
+			UI.LOGGER.log(Level.INFO, "From {0}:\n", remoteDir);
 			downloadFiles(client, localDir, remoteDir);
 			remoteDir = Configuration.getRemoteDirectoryAlt(meeting);
 			if (remoteDir != null) {
-				UI.LOGGER.log(Level.INFO, "From Inbox folder:\n");
+				UI.LOGGER.log(Level.INFO, "From {0}:\n", remoteDir);
 				downloadFiles(client, localDir, remoteDir);
 			}
-			client.logout();
 		} catch (SocketException e1) {
 			UI.LOGGER.log(Level.INFO, e1.getMessage());
 		} catch (IOException e1) {
 			UI.LOGGER.log(Level.INFO, e1.getMessage());
+		} finally {
+			try {
+				if (client.isConnected()) {
+					client.disconnect();
+				}
+			} catch (IOException e) {
+			}
 		}
 
 		if (!isAborted()) {
@@ -88,7 +84,86 @@ public class Downloader implements Runnable {
 			setAbort(false);
 			UI.LOGGER.log(Level.INFO, "{0}\n", DOWNLOAD_ABORTED);
 		}
-		releaseSynLock();
+		releaseSyncLock();
+	}
+
+	public void downloadAndOpen(final DocumentObject docObj) {
+		URL url = docObj.getUrl();
+		if (url == null) {
+			UI.LOGGER.log(Level.INFO, "No URL for document {0}\n",
+					docObj.getTDoc());
+			return;
+		}
+		String meeting = ui.getMeeting();
+		String hostname = url.getHost();
+		FTPClient client = null;
+		try {
+			final File localFile = new File(Configuration.getLocalFilesRoot(), docObj.getUrl().getPath());
+			if (!localFile.exists()) {
+				client = openFtpConnection(hostname);
+				String remotePath = url.getPath();
+				FTPFile[] listing = client.listFiles(remotePath);
+				if (listing.length == 1) {
+					downloadFile(client, localFile, listing[0], remotePath);
+				} else {
+					UI.LOGGER.log(Level.INFO, "{0} not found\n", docObj.getUrl());
+				}
+			}
+			if (localFile.exists()) {
+				SwingUtilities.invokeLater(new Runnable() {
+	
+					@Override
+					public void run() {
+						ui.open(localFile);
+	
+					}
+				});
+			}
+		} catch (SocketException ex) {
+			UI.LOGGER.log(Level.INFO, "{0} not found\n", docObj.getUrl());
+		} catch (IOException e) {
+			UI.LOGGER.log(Level.INFO, "{0} not found\n", docObj.getUrl());
+	
+		} finally {
+			try {
+				if (client.isConnected()) {
+					client.disconnect();
+				}
+			} catch (IOException e) {
+			}
+		}
+		releaseSyncLock();
+	}
+
+	/**
+	 * @return the abortFlag
+	 */
+	public synchronized boolean isAborted() {
+		return abortFlag;
+	}
+
+	/**
+	 * @param flag
+	 *            the abortFlag to set
+	 */
+	public synchronized void setAbort(boolean flag) {
+		this.abortFlag = flag;
+	}
+
+	private FTPClient openFtpConnection(String hostname)
+			throws SocketException, IOException {
+		FTPClient client = new FTPClient();
+		client.connect(hostname);
+		int reply = client.getReplyCode();
+		if (!FTPReply.isPositiveCompletion(reply)) {
+			client.disconnect();
+			throw new IOException("FTP server refused connection.");
+		}
+
+		client.login(FTP_USERNAME, FTP_PASSWORD);
+		client.enterLocalPassiveMode();
+		client.setFileType(FTP.BINARY_FILE_TYPE);
+		return client;
 	}
 
 	private void downloadFiles(FTPClient client, File localDir, String remoteDir)
@@ -112,9 +187,9 @@ public class Downloader implements Runnable {
 			if (remoteFile.isFile()) {
 				File localFile = new File(localDir, remoteFile.getName());
 				UI.LOGGER.log(Level.INFO, "[{0}]", count);
-				downloadFile(client, localFile, remoteFile, remoteDir);
+				downloadFile(client, localFile, remoteFile, remoteDir + "/" + remoteFile.getName());
 				count--;
-				gui.repaint();
+				ui.repaint();
 			}
 		}
 	}
@@ -132,7 +207,7 @@ public class Downloader implements Runnable {
 	 * @throws IOException
 	 */
 	private void downloadFile(FTPClient client, File localFile,
-			FTPFile remoteFile, String remoteDir) {
+			FTPFile remoteFile, String remotePath) {
 		assert client.isConnected();
 		assert localFile != null;
 		assert !localFile.exists();
@@ -140,8 +215,7 @@ public class Downloader implements Runnable {
 		BufferedOutputStream outputStream = null;
 		long contentLength = remoteFile.getSize();
 		try {
-			inputStream = client.retrieveFileStream(remoteDir + "/"
-					+ remoteFile.getName());
+			inputStream = client.retrieveFileStream(remotePath);
 			if (inputStream == null) {
 				UI.LOGGER.log(Level.WARNING,
 						"File not downloaded. Reply = {0}",
@@ -152,13 +226,13 @@ public class Downloader implements Runnable {
 					String.format("Copying %s...", localFile.getName()));
 			outputStream = new BufferedOutputStream(new FileOutputStream(
 					localFile));
-			byte[] buff = new byte[4096];
+			byte[] buff = new byte[1024];
 			int count = 0;
 			int len;
 			while ((len = inputStream.read(buff)) > 0) {
 				outputStream.write(buff, 0, len);
 				count += len;
-				gui.setDownloadProgress((int) (100 * count / contentLength));
+				ui.setDownloadProgress((int) (100 * count / contentLength));
 			}
 			if (client.completePendingCommand()) {
 				UI.LOGGER.log(Level.INFO,
@@ -178,114 +252,19 @@ public class Downloader implements Runnable {
 				}
 			} catch (IOException ex) {
 			}
-			gui.setDownloadProgress(0);
+			ui.setDownloadProgress(0);
 		}
 
 	}
 
-	/**
-	 * @return the abortFlag
-	 */
-	public synchronized boolean isAborted() {
-		return abortFlag;
-	}
-
-	/**
-	 * @param flag
-	 *            the abortFlag to set
-	 */
-	public synchronized void setAbort(boolean flag) {
-		this.abortFlag = flag;
-	}
-
-	/**
-	 * Downloads the file that is specified by the URL into localDirectory
-	 * Pre-cond. localFileName != null && source is OK
-	 * 
-	 * @param url
-	 *            URL from where the file is downloaded
-	 * @param localDirectory
-	 *            directory to which the file is saved.
-	 * @param localFileName
-	 *            the name of file saved.
-	 * @throws IOException
-	 */
-	private void downloadFile(URL url, File localDirectory, String localFileName)
-			throws IOException {
-
-		assert localFileName != null;
-		assert localDirectory.isDirectory();
-		File file = new File(localDirectory, localFileName);
-		assert !file.exists();
-
-		BufferedInputStream inputStream = null;
-		BufferedOutputStream outputStream = null;
-		try {
-			URLConnection con = url.openConnection();
-			if (con == null) {
-				UI.LOGGER.log(Level.INFO,
-						String.format("%s not found.", localFileName));
-				return;
-			}
-			InputStream is = null;
-			is = con.getInputStream();
-			inputStream = new BufferedInputStream(is);
-			UI.LOGGER.log(Level.INFO,
-					String.format("Copying %s...", localFileName));
-			outputStream = new BufferedOutputStream(new FileOutputStream(file));
-			byte[] buff = new byte[4096];
-			int count = 0;
-			int len;
-			while ((len = inputStream.read(buff)) > 0) {
-				outputStream.write(buff, 0, len);
-				// count += len;
-				// gui.setDownloadProgress((int) (100 * count / contentLength));
-			}
-			UI.LOGGER.log(Level.INFO,
-					String.format("%d bytes downloaded.\n", count));
-		} catch (MalformedURLException ex) {
-			UI.LOGGER.log(Level.SEVERE, "{0}\n", ex.getMessage());
-		} finally {
-			try {
-				if (inputStream != null) {
-					inputStream.close();
-				}
-				if (outputStream != null) {
-					outputStream.close();
-				}
-			} catch (IOException ex) {
-			}
-			// gui.setDownloadProgress(0);
-		}
-
-	}
-
-	public void downloadNow(DocumentObject docObj) {
-		URL url = docObj.getUrl();
-		if (url == null) {
-			UI.LOGGER.log(Level.INFO, "No URL for document {0}\n",
-					docObj.getTDoc());
-			return;
-		}
-		File localDirectory = Configuration.getLocalDirectory(gui.getMeeting());
-		try {
-			downloadFile(url, localDirectory, docObj.getTDoc() + ".zip");
-		} catch (SocketException ex) {
-			UI.LOGGER.log(Level.INFO, "{0} not found\n", docObj.getTDoc()
-					+ ".zip");
-		} catch (IOException e) {
-			UI.LOGGER.log(Level.INFO, "{0}\n", DOWNLOAD_ABORTED);
-
-		}
-	}
-
-	private void releaseSynLock() {
+	private void releaseSyncLock() {
 		SwingUtilities.invokeLater(new Runnable() {
 
 			@Override
 			public void run() {
-				gui.setSyncLock(false);
+				ui.setSyncLock(false);
 			}
 		});
 	}
+	
 }

@@ -1,8 +1,10 @@
 package com.drawmetry.docii3gpp.pagehandler;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,9 +18,10 @@ import java.util.Set;
  * @param <V>
  *            the type of the objects mapped to the keys
  */
-public class RegexpMap<K, V> implements Map<K, V> {
+public class RegexpMap<K extends String, V> implements Map<K, V> {
 
 	private Map<K, V> map = new HashMap<K, V>();
+	private List<String> keyList = new ArrayList<String>();
 
 	@Override
 	public void clear() {
@@ -42,14 +45,14 @@ public class RegexpMap<K, V> implements Map<K, V> {
 	}
 
 	/**
-	 * Returns the object that is mapped to a regular expression that the given
-	 * key matches.
+	 * Returns the object that is mapped to the first regular expression that
+	 * the given key matches.
 	 */
 	@Override
 	public V get(Object key) {
 		String text = (String) key;
-		for (Iterator<K> iterator = map.keySet().iterator(); iterator.hasNext();) {
-			String regexpKey = (String) iterator.next();
+		for (Iterator<String> iterator = keyList.iterator(); iterator.hasNext();) {
+			String regexpKey = iterator.next();
 			if (text.matches(regexpKey)) {
 				return map.get(regexpKey);
 			}
@@ -69,16 +72,27 @@ public class RegexpMap<K, V> implements Map<K, V> {
 
 	@Override
 	public V put(K key, V value) {
+		if (!keyList.contains(key)) {
+			keyList.add(key);
+		}
 		return map.put(key, value);
 	}
 
 	@Override
 	public void putAll(Map<? extends K, ? extends V> m) {
+		for (Iterator<? extends K> iterator = m.keySet().iterator(); iterator
+				.hasNext();) {
+			String key = (String) iterator.next();
+			if (!keyList.contains(key)) {
+				keyList.add(key);
+			}
+		}
 		map.putAll(m);
 	}
 
 	@Override
 	public V remove(Object key) {
+		keyList.remove(key);
 		return map.remove(key);
 	}
 

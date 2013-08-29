@@ -10,9 +10,12 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.*;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -47,6 +50,8 @@ public class FilterDialog extends JDialog {
 	private JTextField decisionTextField;
 	private JTextField commentTextField;
 	private JTextField notesTextField;
+
+	private JCheckBox globalCheckBox;
 
 	/**
 	 * Creates new FilterDialog
@@ -86,9 +91,10 @@ public class FilterDialog extends JDialog {
 		Insets insets = new Insets(5, 5, 5, 5);
 		int row = 0;
 
+		/* ** File name ** */
 		JLabel tDocLabel = new JLabel();
 		tDocLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
-		tDocLabel.setText("File name"); // NOI18N
+		tDocLabel.setText("File name:"); // NOI18N
 		c.anchor = GridBagConstraints.LINE_START;
 		c.gridx = 0;
 		c.gridy = row;
@@ -99,10 +105,11 @@ public class FilterDialog extends JDialog {
 		c.gridx = 1;
 		c.gridy = row;
 		c.weightx = 1.0;
-		c.gridwidth = 1;
+		c.gridwidth = 2;
 		add(tDocTextField, c);
 		row++;
 
+		/* ** Title ** */
 		JLabel titleLabel = new JLabel();
 		titleLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
 		titleLabel.setText("Title:"); // NOI18N
@@ -119,7 +126,8 @@ public class FilterDialog extends JDialog {
 		c.gridwidth = 2;
 		add(titleTextField, c);
 		row++;
-
+		
+		/* ** Source ** */
 		JLabel authorsLabel = new JLabel();
 		authorsLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
 		authorsLabel.setText("Source:"); // NOI18N
@@ -136,6 +144,7 @@ public class FilterDialog extends JDialog {
 		add(authorsTextField, c);
 		row++;
 
+		/* ** Agenda ** */
 		JLabel agendaTitleLabel = new JLabel();
 		agendaTitleLabel.setFont(new java.awt.Font("SansSerif", 0, 11));
 		agendaTitleLabel.setText("Agenda:"); // NOI18N
@@ -152,6 +161,7 @@ public class FilterDialog extends JDialog {
 		add(agendaTitleTextField, c);
 		row++;
 
+		/* ** Work Item ** */
 		JLabel workItemLabel = new JLabel();
 		workItemLabel.setFont(new java.awt.Font("SansSerif", 0, 11));
 		workItemLabel.setText("Work Item:"); // NOI18N
@@ -168,9 +178,10 @@ public class FilterDialog extends JDialog {
 		add(workItemTextField, c);
 		row++;
 
+		/* ** Comment ** */
 		JLabel commentLabel = new JLabel();
-		workItemLabel.setFont(new java.awt.Font("SansSerif", 0, 11));
-		workItemLabel.setText("Comment:"); // NOI18N
+		commentLabel.setFont(new java.awt.Font("SansSerif", 0, 11));
+		commentLabel.setText("Comment:"); // NOI18N
 		c.gridx = 0;
 		c.gridy = row;
 		c.insets = insets;
@@ -184,6 +195,7 @@ public class FilterDialog extends JDialog {
 		add(commentTextField, c);
 		row++;
 
+		/* ** Notes ** */
 		JLabel notesLabel = new JLabel();
 		notesLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
 		notesLabel.setText("Notes:"); // NOI18N
@@ -200,6 +212,7 @@ public class FilterDialog extends JDialog {
 		add(notesTextField, c);
 		row++;
 
+		/* ** Decision ** */
 		JLabel decisionLabel = new JLabel();
 		decisionLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
 		decisionLabel.setText("Decision:"); // NOI18N
@@ -216,8 +229,20 @@ public class FilterDialog extends JDialog {
 		add(decisionTextField, c);
 		row++;
 
+		/* ** Buttons ** */
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+		
+		/* Global */
+		JLabel globalLabel = new JLabel();
+		globalLabel.setFont(new java.awt.Font("SansSerif", 0, 11));
+		globalLabel.setText("Global search"); // NOI18N
+		buttonPanel.add(globalLabel);
+		
+		globalCheckBox = new JCheckBox();
+		buttonPanel.add(globalCheckBox);
+		
+		/* Clear */
 		JButton clearButton = new JButton();
 		clearButton.setFont(new java.awt.Font("SansSerif", 0, 11));
 		clearButton.setText("Clear"); // NOI18N
@@ -228,6 +253,7 @@ public class FilterDialog extends JDialog {
 		});
 		buttonPanel.add(clearButton);
 
+		/* Cancel */
 		JButton cancelButton = new JButton();
 		cancelButton.setFont(new java.awt.Font("SansSerif", 0, 11));
 		cancelButton.setText("Cancel"); // NOI18N
@@ -238,6 +264,7 @@ public class FilterDialog extends JDialog {
 		});
 		buttonPanel.add(cancelButton);
 
+		/* OK */
 		JButton okButton = new JButton();
 		okButton.setFont(new java.awt.Font("SansSerif", 0, 11));
 		okButton.setText("OK"); // NOI18N
@@ -267,7 +294,7 @@ public class FilterDialog extends JDialog {
 
 	private void filter() {
 		entries = DataAccessObject.getInstance().findEntries(parent.getTable(),
-				"%" + parent.getMeeting() + "%",
+				"%" + (globalCheckBox.isSelected() ? "" : parent.getMeeting()) + "%",
 				"%" + tDocTextField.getText() + "%",
 				"%" + titleTextField.getText() + "%",
 				"%" + authorsTextField.getText() + "%",
@@ -291,6 +318,8 @@ public class FilterDialog extends JDialog {
 		workItemTextField.setText("");
 		decisionTextField.setText("");
 		commentTextField.setText("");
+		globalCheckBox.setSelected(false);
+		
 	}
 
 }

@@ -92,7 +92,7 @@ public class DataAccessObject {
 	private static final String strGetListEntries = "select ID, TDOC from %s "
 			+ "where TDOC like ? order by TDOC desc";
 	private static final String strFindEntries = "select ID, TDOC from %s "
-			+ "where MEETING like ? and TDOC like ? "
+			+ "where MEETING like ? and LOWER(TDOC) like ? "
 			+ "and LOWER(DOC_TITLE) like ? "
 			+ "and LOWER(SOURCE) like ? and LOWER(NOTES) like ? "
 			+ "and LOWER(AGENDA_TITLE) like ? and LOWER(WORK_ITEM) like ? "

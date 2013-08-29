@@ -2,6 +2,8 @@ package com.drawmetry.docii3gpp.pagehandler;
 
 import java.lang.reflect.InvocationTargetException;
 
+import com.drawmetry.docii3gpp.Configuration;
+
 
 public class PageHandlerFactory {
 
@@ -10,10 +12,10 @@ public class PageHandlerFactory {
 	private static RegexpMap<String, Class<? extends PageHandler>> handlerMap = new RegexpMap<String, Class<? extends PageHandler>>();
 
 	static {
-		handlerMap.put("R2-[8-9][1-9]", R2PageHandler_81.class);
+		handlerMap.put("R2-[8-9][1-9](bis)?", R2PageHandler_81.class);
 		handlerMap.put("RAN-[6-9]\\d", RPPageHandler_60.class);
 		handlerMap.put("S2-95", S2PageHandler_95.class);
-		handlerMap.put("S2-9[6-9]", S2PageHandler_96.class);
+		handlerMap.put("S2-9[6-9]E?", S2PageHandler_96.class);
 		handlerMap.put("SP-5[8-9]", SPPageHandler_58.class);
 		handlerMap.put("SP-[6-9]\\d", SPPageHandler_60.class);
 	}
@@ -41,6 +43,18 @@ public class PageHandlerFactory {
 		} catch (SecurityException e) {
 			throw new PageHandlerFactoryException(e);
 		}
+	}
+	
+	public static void main(String[] args) {
+		try {
+			Configuration.initialize();
+			PageHandler handler = PageHandlerFactory.getInstance("R2-81bis");
+			System.out.println(handler.getClass());
+		} catch (PageHandlerFactoryException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 
 }

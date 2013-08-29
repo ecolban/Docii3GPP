@@ -55,7 +55,7 @@ public class Synchronizer implements Runnable {
 						con.getInputStream()));
 			}
 			String line = null;
-			while ((line = input.readLine()) != null) {
+			while ((line = input.readLine()) != null && !isAborted()) {
 				handler.processLine(line);
 			}
 
@@ -76,7 +76,7 @@ public class Synchronizer implements Runnable {
 			setAbort(false);
 			LOGGER.log(Level.INFO, String.format("%s\n", SYNC_ABORTED));
 		}
-		releaseSynLock();
+		releaseSyncLock();
 	}
 
 	private synchronized boolean isAborted() {
@@ -87,7 +87,7 @@ public class Synchronizer implements Runnable {
 		abortFlag = b;
 	}
 
-	private void releaseSynLock() {
+	private void releaseSyncLock() {
 		SwingUtilities.invokeLater(new Runnable() {
 
 			@Override
