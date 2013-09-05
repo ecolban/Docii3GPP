@@ -10,10 +10,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.util.*;
-
+import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
@@ -126,7 +123,7 @@ public class FilterDialog extends JDialog {
 		c.gridwidth = 2;
 		add(titleTextField, c);
 		row++;
-		
+
 		/* ** Source ** */
 		JLabel authorsLabel = new JLabel();
 		authorsLabel.setFont(new java.awt.Font("SansSerif", 0, 11)); // NOI18N
@@ -232,16 +229,16 @@ public class FilterDialog extends JDialog {
 		/* ** Buttons ** */
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
-		
+
 		/* Global */
 		JLabel globalLabel = new JLabel();
 		globalLabel.setFont(new java.awt.Font("SansSerif", 0, 11));
 		globalLabel.setText("Global search"); // NOI18N
 		buttonPanel.add(globalLabel);
-		
+
 		globalCheckBox = new JCheckBox();
 		buttonPanel.add(globalCheckBox);
-		
+
 		/* Clear */
 		JButton clearButton = new JButton();
 		clearButton.setFont(new java.awt.Font("SansSerif", 0, 11));
@@ -294,12 +291,12 @@ public class FilterDialog extends JDialog {
 
 	private void filter() {
 		entries = DataAccessObject.getInstance().findEntries(parent.getTable(),
-				"%" + (globalCheckBox.isSelected() ? "" : parent.getMeeting()) + "%",
+				(globalCheckBox.isSelected() ? "%" : parent.getMeeting()),
 				"%" + tDocTextField.getText() + "%",
 				"%" + titleTextField.getText() + "%",
 				"%" + authorsTextField.getText() + "%",
 				"%" + notesTextField.getText() + "%",
-				"%" + agendaTitleTextField.getText() + "%",
+				agendaTitleTextField.getText() + "%",
 				"%" + workItemTextField.getText() + "%",
 				"%" + decisionTextField.getText() + "%",
 				"%" + commentTextField.getText() + "%");
@@ -319,7 +316,7 @@ public class FilterDialog extends JDialog {
 		decisionTextField.setText("");
 		commentTextField.setText("");
 		globalCheckBox.setSelected(false);
-		
+
 	}
 
 }

@@ -17,7 +17,8 @@ public class PageHandlerFactory {
 		handlerMap.put("S2-95", S2PageHandler_95.class);
 		handlerMap.put("S2-9[6-9]E?", S2PageHandler_96.class);
 		handlerMap.put("SP-5[8-9]", SPPageHandler_58.class);
-		handlerMap.put("SP-[6-9]\\d", SPPageHandler_60.class);
+		handlerMap.put("SP-6[0-9]", SPPageHandler_60.class);
+//		handlerMap.put("SP-6[1-9]", SPPageHandler_61.class);
 	}
 	
 	/**
