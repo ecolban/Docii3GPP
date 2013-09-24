@@ -138,20 +138,20 @@ public class DataAccessObject {
 		try {
 			Statement stmt = db.dbConnection.createStatement();
 
-			stmt.execute("alter table TDOC_TABLE alter column  WORK_ITEM set data type VARCHAR(200)");
-			db.dbConnection.commit();
+//			stmt.execute("alter table TDOC_TABLE alter column  WORK_ITEM set data type VARCHAR(200)");
+//			db.dbConnection.commit();
 
-			// ResultSet rs = stmt
-			// .executeQuery("select ID from TDOC_TABLE where MEETING like 'R2-83' and TDOC not like 'R2-%'");
-			// int count = 0;
-			// while (rs.next()) {
-			// int id = rs.getInt("ID");
-			// // System.out.println("" + db.getDocumentOject("WG80221", id));
-			// db.deleteRecord("TDOC_TABLE", id);
-			// count++;
-			// db.dbConnection.commit();
-			// }
-			// System.out.println("count = " + count);
+			 ResultSet rs = stmt
+			 .executeQuery("select ID from TDOC_TABLE where MEETING like 'RAN-58' and TDOC not like 'RAN-%'");
+			 int count = 0;
+			 while (rs.next()) {
+			 int id = rs.getInt("ID");
+			 // System.out.println("" + db.getDocumentOject("WG80221", id));
+			 db.deleteRecord("TDOC_TABLE", id);
+			 count++;
+			 db.dbConnection.commit();
+			 }
+			 System.out.println("count = " + count);
 		} catch (SQLException ex) {
 			LOGGER.log(Level.SEVERE, ex.getMessage());
 		}

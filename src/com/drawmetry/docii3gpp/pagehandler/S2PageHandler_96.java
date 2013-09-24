@@ -22,8 +22,9 @@ import java.util.regex.Pattern;
  *         All Rights Reserved Worldwide
  */
 public class S2PageHandler_96 implements PageHandler {
-	
-	private static final Logger LOGGER = Logger.getLogger("com.drawmetry.docii3gpp");
+
+	private static final Logger LOGGER = Logger
+			.getLogger("com.drawmetry.docii3gpp");
 
 	private static final Pattern TDOC_PATTERN = Pattern
 			.compile("(<a .* href=\"(.*\\.zip)\">)?([CGRS][1-5P]-\\d{6})(</a>)?");
@@ -72,6 +73,8 @@ public class S2PageHandler_96 implements PageHandler {
 
 	private final String meeting;
 
+	private final String ftpPrefix;
+
 	/**
 	 * Constructor
 	 * 
@@ -83,7 +86,8 @@ public class S2PageHandler_96 implements PageHandler {
 	public S2PageHandler_96(String meeting) {
 		this.db = DataAccessObject.getInstance();
 		this.meeting = meeting;
-		this.table  = Configuration.getTables()[0];
+		this.table = Configuration.getTables()[0];
+		this.ftpPrefix = Configuration.getFtpPrefix(meeting);
 
 	}
 
@@ -120,14 +124,17 @@ public class S2PageHandler_96 implements PageHandler {
 			break;
 		case 5:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //TDoc #
-			String tmp = matcher.group(1);
-			Matcher tdocMatcher = TDOC_PATTERN.matcher(tmp);
+			String tdocSpec = matcher.group(1);
+			Matcher tdocMatcher = TDOC_PATTERN.matcher(tdocSpec);
 			if (tdocMatcher.matches()) {
-				url = tdocMatcher.group(2);
 				tDoc = tdocMatcher.group(3);
+				if (ftpPrefix == null) {
+					url = tdocMatcher.group(2);
+				} else {
+					url = ftpPrefix + tDoc + ".zip";
+				}
 			} else {
-				url = "";
-				tDoc = "";
+				lineCount = -1;
 			}
 			lineCount++;
 			break;

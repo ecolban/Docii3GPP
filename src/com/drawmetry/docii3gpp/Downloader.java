@@ -67,16 +67,19 @@ public class Downloader implements Runnable {
 				downloadFiles(client, localDir, remoteDir);
 			}
 		} catch (SocketException e1) {
-			LOGGER.log(Level.INFO, e1.getMessage());
+			LOGGER.log(Level.INFO, e1.getMessage() + "\n");
+			setAbort(true);
 		} catch (IOException e1) {
-			LOGGER.log(Level.INFO, e1.getMessage());
+			LOGGER.log(Level.INFO, e1.getMessage() + "\n");
+			setAbort(true);
 		} finally {
 			try {
-				if (client.isConnected()) {
+				if (client != null && client.isConnected()) {
 					client.disconnect();
 				}
 			} catch (IOException e) {
 			}
+			releaseSyncLock();
 		}
 
 		if (!isAborted()) {
@@ -85,7 +88,6 @@ public class Downloader implements Runnable {
 			setAbort(false);
 			LOGGER.log(Level.INFO, "{0}\n", DOWNLOAD_ABORTED);
 		}
-		releaseSyncLock();
 	}
 
 	public void downloadAndOpen(final DocumentObject docObj) {
@@ -207,7 +209,7 @@ public class Downloader implements Runnable {
 	 * @throws IOException
 	 */
 	private void downloadFile(FTPClient client, File localFile,
-			FTPFile remoteFile, String remotePath) {
+			FTPFile remoteFile, String remotePath) throws IOException {
 		assert client.isConnected();
 		assert localFile != null;
 		assert !localFile.exists();
@@ -239,8 +241,6 @@ public class Downloader implements Runnable {
 						String.format("%d bytes downloaded.\n", count));
 			}
 		} catch (MalformedURLException ex) {
-			LOGGER.log(Level.SEVERE, "{0}\n", ex.getMessage());
-		} catch (IOException ex) {
 			LOGGER.log(Level.SEVERE, "{0}\n", ex.getMessage());
 		} finally {
 			try {

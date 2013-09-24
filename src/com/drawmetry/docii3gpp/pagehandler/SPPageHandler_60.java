@@ -21,8 +21,9 @@ import java.util.regex.Pattern;
  */
 public class SPPageHandler_60 implements PageHandler {
 
-	private static final Logger LOGGER = Logger.getLogger("com.drawmetry.docii3gpp");
-	
+	private static final Logger LOGGER = Logger
+			.getLogger("com.drawmetry.docii3gpp");
+
 	private static final Pattern TDOC_PATTERN = Pattern
 			.compile("(<a .* href=\"(.*\\.zip)\">)?([CGRS][1-5P]-\\d{6})(</a>)?");
 
@@ -46,6 +47,10 @@ public class SPPageHandler_60 implements PageHandler {
 			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Rx
 			"\\s*</TR>" };
 	private static final Pattern[] entryPattern = new Pattern[ENTRY_STRINGS.length];
+
+	private static final String AGENDA_ITEM = "<TD .*><FONT [^>]*>(.*)</FONT></TD>"
+			+ "\\s*<TD .*><FONT [^>]*>(.)</FONT></TD>"
+			+ "\\s*<TD .*><FONT [^>]*></FONT></TD>";
 
 	static {
 		for (int i = 0; i < ENTRY_STRINGS.length; i++) {
@@ -72,6 +77,8 @@ public class SPPageHandler_60 implements PageHandler {
 
 	private final String meeting;
 
+	private final String ftpPrefix;
+
 	/**
 	 * Constructor
 	 * 
@@ -84,9 +91,10 @@ public class SPPageHandler_60 implements PageHandler {
 		this.db = DataAccessObject.getInstance();
 		this.meeting = meeting;
 		this.table = Configuration.getTables()[0];
+		this.ftpPrefix = Configuration.getFtpPrefix(meeting);
 
 	}
-	
+
 	/**
 	 * Handles one line read from the page.
 	 * 
@@ -119,8 +127,10 @@ public class SPPageHandler_60 implements PageHandler {
 				String tmp = matcher.group(1);
 				Matcher tdocMatcher = TDOC_PATTERN.matcher(tmp);
 				if (tdocMatcher.matches()) {
-					url = tdocMatcher.group(2);
+					// url = tdocMatcher.group(2);
+
 					tDoc = tdocMatcher.group(3);
+					url = ftpPrefix + tDoc + ".zip";
 				} else {
 					url = "";
 					tDoc = "";
@@ -242,18 +252,18 @@ public class SPPageHandler_60 implements PageHandler {
 			if (matcher.matches()) {
 				try {
 					DocumentObject doc = new DocumentObject(-1, meeting,
-							agendaItem, "", url, tDoc, docType, docTitle,
-							source, "", revByTDoc, revOfTDoc, lsSource,
-							comment, decision, "");
+							agendaItem, agendaItem, url, tDoc, docType,
+							docTitle, source, "", revByTDoc, revOfTDoc,
+							lsSource, comment, decision, "");
 					List<DocEntry> entries = db.findEntries(table,
 							doc.getTDoc());
-					 if (entries.isEmpty()) {
-					 db.saveRecord(table, doc);
-					 } else {
-					 DocEntry entry = entries.get(0);
-					
-					 db.mergeRecord(table, entry.getId(), doc);
-					 }
+					if (entries.isEmpty()) {
+						db.saveRecord(table, doc);
+					} else {
+						DocEntry entry = entries.get(0);
+
+						db.mergeRecord(table, entry.getId(), doc);
+					}
 				} catch (MalformedURLException ex) {
 					LOGGER.log(Level.SEVERE, null, ex);
 				}

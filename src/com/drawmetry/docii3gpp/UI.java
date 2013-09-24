@@ -136,7 +136,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	private DataAccessObject db;
 	/* State */
 	private boolean changed = false; // true when entry needs to be saved
-	private String  table;
+	private String table;
 	// private boolean latest = false; // true when only the latest revision is
 	// to
 	// appear in the entry list
@@ -156,6 +156,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 			changed = true;
 		}
 	};
+
 	private class DocEntryRenderer extends DefaultListCellRenderer {
 
 		/**
@@ -176,9 +177,9 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 					entry.getId());
 			URL url = docObj.getUrl();
 			File file = null;
-			if(url != null) {
-				file = new File(Configuration.getLocalFilesRoot(),
-					docObj.getUrl().getPath());
+			if (url != null) {
+				file = new File(Configuration.getLocalFilesRoot(), docObj
+						.getUrl().getPath());
 			}
 			if (file != null && file.exists()) {
 				this.setForeground(Color.BLACK);
@@ -928,7 +929,7 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 	}
 
 	private void openCurrentDocument() {
-		if (currentEntry == null || isSyncLock()) {
+		if (currentEntry == null) {
 			return;
 		}
 		final DocumentObject docObj = db.getDocumentOject(getTable(),
@@ -939,23 +940,25 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		File file = new File(Configuration.getLocalFilesRoot(), docObj.getUrl()
 				.getPath());
 		if (!file.exists()) {
-			setSyncLock(true);
-			int answer = JOptionPane.showConfirmDialog(this,
-					"File not found locally. Download now?", "Download",
-					JOptionPane.YES_NO_OPTION);
-			if (answer == JOptionPane.YES_OPTION) {
-				final Downloader dl = new Downloader(this);
+			if (!isSyncLock()) {
+				setSyncLock(true);
+				int answer = JOptionPane.showConfirmDialog(this,
+						"File not found locally. Download now?", "Download",
+						JOptionPane.YES_NO_OPTION);
+				if (answer == JOptionPane.YES_OPTION) {
+					final Downloader dl = new Downloader(this);
 
-				Thread downloadThread = new Thread(new Runnable() {
+					Thread downloadThread = new Thread(new Runnable() {
 
-					@Override
-					public void run() {
-						dl.downloadAndOpen(docObj);
-					}
-				});
-				downloadThread.start();
-			} else {
-				setSyncLock(false);
+						@Override
+						public void run() {
+							dl.downloadAndOpen(docObj);
+						}
+					});
+					downloadThread.start();
+				} else {
+					setSyncLock(false);
+				}
 			}
 		} else {
 			open(file);

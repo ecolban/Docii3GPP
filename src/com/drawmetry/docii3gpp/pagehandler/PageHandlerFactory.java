@@ -13,7 +13,7 @@ public class PageHandlerFactory {
 
 	static {
 		handlerMap.put("R2-[8-9][1-9](bis)?", R2PageHandler_81.class);
-		handlerMap.put("RAN-[6-9]\\d", RPPageHandler_60.class);
+		handlerMap.put("RAN-[5-9]\\d", RPPageHandler_60.class);
 		handlerMap.put("S2-95", S2PageHandler_95.class);
 		handlerMap.put("S2-9[6-9]E?", S2PageHandler_96.class);
 		handlerMap.put("SP-5[8-9]", SPPageHandler_58.class);
