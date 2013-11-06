@@ -78,7 +78,7 @@ public class DataAccessObject {
 			+ ", SOURCE       VARCHAR(" + SOURCE_LENGTH + ")" //
 			+ ", WORK_ITEM    VARCHAR(" + WORK_ITEM_LENGTH + ")" //
 			+ ", REV_BY       CHAR(" + TDOC_LENGTH + ")" //
-			+ ", REV_OF       CHAR(" + TDOC_LENGTH + ")" //
+			+ ", REV_OF       CHAR(" + 2 * TDOC_LENGTH + 2 + ")" //
 			+ ", LS_SOURCE    VARCHAR(" + LS_SOURCE_LENGTH + ")" //
 			+ ", COMMENT      VARCHAR(" + COMMENT_LENGTH + ")" //
 			+ ", DECISION     VARCHAR(" + DECISION_LENGTH + ")" //
@@ -138,20 +138,20 @@ public class DataAccessObject {
 		try {
 			Statement stmt = db.dbConnection.createStatement();
 
-//			stmt.execute("alter table TDOC_TABLE alter column  WORK_ITEM set data type VARCHAR(200)");
-//			db.dbConnection.commit();
+			stmt.execute("alter table TDOC_TABLE alter column  REV_OF set data type CHAR(20)");
+			db.dbConnection.commit();
 
-			 ResultSet rs = stmt
-			 .executeQuery("select ID from TDOC_TABLE where MEETING like 'RAN-58' and TDOC not like 'RAN-%'");
-			 int count = 0;
-			 while (rs.next()) {
-			 int id = rs.getInt("ID");
-			 // System.out.println("" + db.getDocumentOject("WG80221", id));
-			 db.deleteRecord("TDOC_TABLE", id);
-			 count++;
-			 db.dbConnection.commit();
-			 }
-			 System.out.println("count = " + count);
+//			 ResultSet rs = stmt
+//			 .executeQuery("select ID from TDOC_TABLE where MEETING like 'R1-74bis' and TDOC not like 'R1-%'");
+//			 int count = 0;
+//			 while (rs.next()) {
+//			 int id = rs.getInt("ID");
+//			 // System.out.println("" + db.getDocumentOject("WG80221", id));
+//			 db.deleteRecord("TDOC_TABLE", id);
+//			 count++;
+//			 db.dbConnection.commit();
+//			 }
+//			 System.out.println("count = " + count);
 		} catch (SQLException ex) {
 			LOGGER.log(Level.SEVERE, ex.getMessage());
 		}
@@ -782,6 +782,7 @@ public class DataAccessObject {
 	}
 
 	private String trim(String prefix, String field, int length) {
+		field = field.trim();	
 		if (field.length() > length) {
 			LOGGER.log(Level.WARNING, "{0}: Field truncated to length {1}\n",
 					new Object[] { prefix, length });

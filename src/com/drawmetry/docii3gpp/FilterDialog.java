@@ -57,6 +57,7 @@ public class FilterDialog extends JDialog {
 	public FilterDialog(UI parent, boolean modal) {
 		super(parent, "Filter", modal);
 		this.parent = parent;
+		setLocationRelativeTo(parent);
 		initComponents();
 		tDocTextField.addActionListener(filterListener);
 		titleTextField.addActionListener(filterListener);

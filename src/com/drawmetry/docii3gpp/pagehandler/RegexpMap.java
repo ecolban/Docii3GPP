@@ -50,11 +50,11 @@ public class RegexpMap<K extends String, V> implements Map<K, V> {
 	 */
 	@Override
 	public V get(Object key) {
-		String text = (String) key;
+		String keyString = (String) key;
 		for (Iterator<String> iterator = keyList.iterator(); iterator.hasNext();) {
-			String regexpKey = iterator.next();
-			if (text.matches(regexpKey)) {
-				return map.get(regexpKey);
+			String regexp = iterator.next();
+			if (keyString.matches(regexp)) {
+				return map.get(regexp);
 			}
 		}
 		return null;

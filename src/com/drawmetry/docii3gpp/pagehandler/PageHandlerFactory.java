@@ -12,13 +12,17 @@ public class PageHandlerFactory {
 	private static RegexpMap<String, Class<? extends PageHandler>> handlerMap = new RegexpMap<String, Class<? extends PageHandler>>();
 
 	static {
-		handlerMap.put("R2-[8-9][1-9](bis)?", R2PageHandler_81.class);
+		handlerMap.put("R1-74bis", R1PageHandler_74b.class);
+		handlerMap.put("R1-7[5-9](bis)?", R1PageHandler_74b.class);
+		handlerMap.put("R2-[8-9]\\d(bis)?", R2PageHandler_81.class);
 		handlerMap.put("RAN-[5-9]\\d", RPPageHandler_60.class);
+		handlerMap.put("S1-6[3-9]", S1PageHandler_63.class);
 		handlerMap.put("S2-95", S2PageHandler_95.class);
-		handlerMap.put("S2-9[6-9]E?", S2PageHandler_96.class);
+		handlerMap.put("S2-9[6-9]E?(bis)?", S2PageHandler_96.class);
+		handlerMap.put("S2-1\\d\\d(bis)?", S2PageHandler_96.class);
 		handlerMap.put("SP-5[8-9]", SPPageHandler_58.class);
-		handlerMap.put("SP-6[0-9]", SPPageHandler_60.class);
-//		handlerMap.put("SP-6[1-9]", SPPageHandler_61.class);
+		handlerMap.put("SP-60", SPPageHandler_60.class);
+		handlerMap.put("SP-6[1-9]", SPPageHandler_61.class);
 	}
 	
 	/**

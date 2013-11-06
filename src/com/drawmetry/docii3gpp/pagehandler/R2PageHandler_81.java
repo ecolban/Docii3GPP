@@ -15,34 +15,35 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Parser of the HTML file (ftp-TdocsByTdoc_S2-96.htm) containing all document
- * information that 3GPP SA2 MCC generated at SA2 meeting 96. Same format used
- * in later meetings.
+ * Parser of XLS file containing all document information that 3GPP SA2 MCC
+ * generates at R2 meetings since meeting 81. 
  * 
  * @author Erik Colban &copy; 2013 <br>
  *         All Rights Reserved Worldwide
  */
 public class R2PageHandler_81 implements PageHandler {
-	
-	private static final Logger LOGGER = Logger.getLogger("com.drawmetry.docii3gpp");
+
+	private static final Logger LOGGER = Logger
+			.getLogger("com.drawmetry.docii3gpp");
 
 	private static final int AGENDA_ITEM_COLUMN = 0;
-	private static final int DECISION_COLUMN = 1;
-	private static final int TDOC_COLUMN = 3;
-	private static final int TITLE_COLUMN = 4;
-	private static final int SOURCE_COLUMN = 5;
-	private static final int TYPE_COLUMN = 6;
+	private static final int DECISION_COLUMN = 2;
+	private static final int TDOC_COLUMN = 4;
+	private static final int TITLE_COLUMN = 5;
+	private static final int SOURCE_COLUMN = 6;
+	private static final int TYPE_COLUMN = 7;
 	private static final int LS_SOURCE_COLUMN = 8;
-	private static final int FURTHER_INFO_COLUMN = 11;
-	private static final int WI_COLUMN = 13;
-	private static final int RELATED_TDOC_COLUMN = 14;
-	private static final int COMMENT_COLUMN = 15;
+	private static final int FURTHER_INFO_COLUMN = 12;
+	private static final int WI_COLUMN = 14;
+	private static final int RELATED_TDOC_COLUMN = 15;
+	private static final int COMMENT_COLUMN = 16;
 
-	private static final Pattern CSV_FIELD_PATTERN = Pattern
-			.compile(",(?:\"((?:[^\"]|\"\")*)\"|([^,]*))");
+	private static final String CSV_FIELD_REGEXP = "(?:\"((?:[^\"]|\"\")*)\"|([^,]*))";
+	private static final Pattern COMMA_CSV_FIELD_PATTERN = Pattern.compile(","
+			+ CSV_FIELD_REGEXP);
 
-	private static final Pattern LINE_PATTERN = Pattern.compile("^(Yes|No)"
-			+ "(?:,(?:\"((?:[^\"]|\"\")*)\"|([^,]*))){16}");
+	private static final Pattern LINE_PATTERN = Pattern.compile(//
+			"^" + CSV_FIELD_REGEXP + ",(Yes|No)(," + CSV_FIELD_REGEXP + "){15}");
 
 	StringBuilder lineBuilder = new StringBuilder();
 	boolean oddQuotes = false;
@@ -108,10 +109,11 @@ public class R2PageHandler_81 implements PageHandler {
 	private void processEntry(String line) {
 		Matcher lineMatcher = LINE_PATTERN.matcher(line);
 		if (lineMatcher.lookingAt()) {
-			line = line.substring(lineMatcher.start(), lineMatcher.end());
-			Matcher fieldMatcher = CSV_FIELD_PATTERN.matcher(line);
-			String[] fields = new String[16];
-			String field;
+			line = "," + line.substring(lineMatcher.start(), lineMatcher.end());
+			String[] fields = new String[17];
+			Matcher fieldMatcher = COMMA_CSV_FIELD_PATTERN.matcher(line);
+			String field = null;
+
 			for (int i = 0; fieldMatcher.find(); i++) {
 				if ((field = fieldMatcher.group(1)) != null) {
 					field = field.replace("\"\"", "\"");
@@ -145,12 +147,12 @@ public class R2PageHandler_81 implements PageHandler {
 						lsSource, comment, decision, "");
 				List<DocEntry> entries = db.findEntries(table, doc.getTDoc());
 				if (entries.isEmpty()) {
-					 db.saveRecord(table, doc);
+					db.saveRecord(table, doc);
 				} else {
-					 DocEntry entry = entries.get(0);
-					 db.mergeRecord(table, entry.getId(), doc);
+					DocEntry entry = entries.get(0);
+					db.mergeRecord(table, entry.getId(), doc);
 				}
-//					System.out.println(doc);
+				// System.out.println(doc);
 			} catch (MalformedURLException ex) {
 				LOGGER.log(Level.SEVERE, null, ex);
 			}
@@ -164,7 +166,7 @@ public class R2PageHandler_81 implements PageHandler {
 	 *            ignored
 	 */
 	public static void main(String[] args) {
-		String line = "Yes,03.2: LSin: LTE relevance,noted,,R2-130003,"
+		String line = "\"03.2: LSin: LTE, relevance\",No,noted,,R2-130003,"
 				+ "LS on UE capability for the joint operation of downlink CoMP and CA (R1-125392; contact: Huawei),"
 				+ "RAN1,LSin,,,,,"
 				+ "to: RAN2; received on Fri of RAN2 #80 as R2-126113 and not treated there but taken into account in email discussion [80#14]; no LS answer,REL-11,COMP_LTE_DL-Core,"

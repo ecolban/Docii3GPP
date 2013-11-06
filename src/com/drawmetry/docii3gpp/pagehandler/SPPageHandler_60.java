@@ -48,9 +48,9 @@ public class SPPageHandler_60 implements PageHandler {
 			"\\s*</TR>" };
 	private static final Pattern[] entryPattern = new Pattern[ENTRY_STRINGS.length];
 
-	private static final String AGENDA_ITEM = "<TD .*><FONT [^>]*>(.*)</FONT></TD>"
-			+ "\\s*<TD .*><FONT [^>]*>(.)</FONT></TD>"
-			+ "\\s*<TD .*><FONT [^>]*></FONT></TD>";
+//	private static final String AGENDA_ITEM = "<TD .*><FONT [^>]*>(.*)</FONT></TD>"
+//			+ "\\s*<TD .*><FONT [^>]*>(.)</FONT></TD>"
+//			+ "\\s*<TD .*><FONT [^>]*></FONT></TD>";
 
 	static {
 		for (int i = 0; i < ENTRY_STRINGS.length; i++) {
