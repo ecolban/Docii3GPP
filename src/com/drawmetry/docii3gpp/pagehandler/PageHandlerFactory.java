@@ -15,6 +15,7 @@ public class PageHandlerFactory {
 		handlerMap.put("R1-74bis", R1PageHandler_74b.class);
 		handlerMap.put("R1-7[5-9](bis)?", R1PageHandler_74b.class);
 		handlerMap.put("R2-[8-9]\\d(bis)?", R2PageHandler_81.class);
+		handlerMap.put("R4-[6-7]\\d(bis)?", R4PageHandler_69.class);
 		handlerMap.put("RAN-[5-9]\\d", RPPageHandler_60.class);
 		handlerMap.put("S1-6[3-9]", S1PageHandler_63.class);
 		handlerMap.put("S2-95", S2PageHandler_95.class);

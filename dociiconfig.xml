@@ -1,0 +1,274 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<docii3gpp>
+<!--Configure systemhome to be the directory where the database resides.
+    A relative path is relative to the user's home directory-->
+    <derby
+        user = "user"
+        password = "user"
+        driver = "org.apache.derby.jdbc.EmbeddedDriver"
+        url = "jdbc:derby:"
+        schema ="APP"     
+        systemhome = "H:\Documents\Cygnus\3GPP_database\database"
+        database = "DocumentDB"
+    />
+
+<!--  Directory of downloaded files
+    If the root directory is relative, it is relative to the user's home directory.
+-->
+    <localfiles root = ".3GPP" />
+	
+<!-- 
+	<remote host = "ftp.3gpp.org" /> 
+-->
+	<remote host = "10.10.10.10" /> 
+	<!-- Nov 2013 -->
+	
+	<meeting 
+			name = "S2-100" 
+			tdoclist = "ftp://10.10.10.10/SA/SA2/ftp-TdocsByTdoc.htm" 
+			agenda = "ftp://10.10.10.10/SA/SA2/S2-100_Agenda.htm"
+			localdir = "tsg_sa/WG2_Arch/TSGS2_100_San_Francisco/Docs"
+			remotedir = "SA/SA2/Docs"
+			remotedir_alt = "SA/SA2/Inbox"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_sa/WG2_Arch/TSGS2_100_San_Francisco/Docs/"
+			/> 
+
+<!--
+	<meeting 
+			name = "S2-100" 
+			tdoclist = "ftp://ftp.3gpp.org/tsg_sa/WG2_Arch/TSGS2_100_San_Francisco/ftp-TdocsByTdoc.htm" 
+			remotedir = "/tsg_sa/WG2_Arch/TSGS2_100_San_Francisco/Docs"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_sa/WG2_Arch/TSGS2_100_San_Francisco/Docs/"
+			/>
+-->
+
+	<meeting 
+			name = "R2-84" 
+			tdoclist = ".3GPP/tsg_ran\WG2_RL2\TSGR2_84\Tdoclist\Tdoc_List_RAN2_84.csv" 
+			localdir = "tsg_ran/WG2_RL2/TSGR2_84/Docs"
+			remotedir = "/RAN/RAN2/Docs"
+			remotedir_alt = "/RAN/RAN2/Inbox"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/WG2_RL2/TSGR2_84/Docs/"
+			/>
+<!--			
+	<meeting 
+			name = "R2-84" 
+			tdoclist = ".3GPP/tsg_ran\WG2_RL2\TSGR2_84\Tdoclist\Tdoc_List_RAN2_84.csv" 
+			remotedir = "tsg_ran/WG2_RL2/TSGR2_84/Docs" 
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/WG2_RL2/TSGR2_84/Docs/"
+			/>
+-->
+	<meeting 
+			name = "S1-64" 
+			tdoclist = ".3GPP/tsg_sa/WG1_Serv/TSGS1_64_SanFrancisco/SA1_64_tdoc_listing.htm" 
+			localdir = "tsg_sa/WG1_Serv/TSGS1_64_SanFrancisco/docs"
+			remotedir = "/SA/SA1/Docs"
+			remotedir_alt = "/SA/SA1/Inbox"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_sa/WG1_Serv/TSGS1_64_SanFrancisco/docs/"
+			/>
+<!--	
+	<meeting
+			name = "S1-64"
+			tdoclist = ".3GPP/tsg_sa/WG1_Serv/TSGS1_64_SanFrancisco/SA1_64_tdoc_listing.htm"
+			remotedir = "/tsg_sa/WG1_Serv/TSGS1_64_SanFrancisco/docs"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_sa/WG1_Serv/TSGS1_64_SanFrancisco/docs/"
+			/>
+-->		
+	<meeting 
+			name = "R1-75" 
+			tdoclist = ".3GPP\tsg_ran\WG1_RL1\TSGR1_75\Report\Tdoclist_RAN1#75.csv" 
+			localdir = "tsg_ran/WG1_RL1/TSGR1_75/Docs"
+			remotedir = "/RAN/RAN1/Docs"
+			remotedir_alt = "/RAN/RAN1/Inbox"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/WG1_RL1/TSGR1_75/Docs/"
+			/>
+<!--			
+	<meeting 
+			name = "R4-69" 
+			tdoclist = ".3GPP\tsg_ran\WG4_Radio\TSGR4_69\List of docs\LOD-RAN4#69-San-Francisco.csv" 
+			remotedir = "/tsg_ran/WG4_Radio/TSGR4_69/Docs" 
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/WG4_Radio/TSGR4_69/Docs/"
+			/>
+-->
+	<meeting 
+			name = "R4-69" 
+			tdoclist = ".3GPP\tsg_ran\WG4_Radio\TSGR4_69\List of docs\LOD-RAN4#69-San-Francisco.csv" 
+			localdir = "tsg_ran/WG4_Radio/TSGR4_69/Docs"
+			remotedir = "/RAN/RAN4/Docs"
+			remotedir_alt = "/RAN/RAN4/Inbox"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/WG4_Radio/TSGR4_69/Docs/"
+			/>
+<!--			
+	<meeting 
+			name = "R1-75" 
+			tdoclist = ".3GPP\tsg_ran\WG1_RL1\TSGR1_75\Report\Tdoclist_RAN1#75.csv" 
+			remotedir = "tsg_ran/WG1_RL1/TSGR1_75/Docs" 
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/WG1_RL1/TSGR1_75/Docs/"
+			/>
+-->
+	
+	<!-- Oct 2013 -->
+	<meeting 
+			name = "R1-74bis" 
+			tdoclist = ".3GPP/tsg_ran/WG1_RL1/TSGR1_74b/Report/Tdoclist_RAN1#74b.csv" 
+			remotedir = "tsg_ran/WG1_RL1/TSGR1_74b/Docs" 
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/WG1_RL1/TSGR1_74b/Docs/"
+			/>
+			
+	<meeting 
+			name = "R2-83bis" 
+			tdoclist = ".3GPP/tsg_ran/WG2_RL2/TSGR2_83bis/Tdoclist/Tdoc_List_RAN2_83bis.csv" 
+			remotedir = "tsg_ran/WG2_RL2/TSGR2_83bis/Docs" 
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/WG2_RL2/TSGR2_83bis/Docs/"
+			/>
+	<!-- Sept 2013 -->
+	
+	<meeting 
+			name = "S2-99" 
+			tdoclist = "ftp://ftp.3gpp.org/tsg_sa/WG2_Arch/TSGS2_99_Xiamen/TdocsByTdoc.htm" 
+			remotedir = "/tsg_sa/WG2_Arch/TSGS2_99_Xiamen/Docs"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_sa/WG2_Arch/TSGS2_99_Xiamen/Docs/"
+			/> 
+			
+	<meeting 
+			name = "SP-61" 
+			tdoclist = "ftp://ftp.3gpp.org/tsg_sa/TSG_SA/TSGS_61/ftp-TdocsByTdoc_SP-61.htm" 
+			agenda = "ftp://ftp.3gpp.org/tsg_sa/TSG_SA/TSGS_61/ftp-TdocsByAgenda_SP-61.htm"
+			remotedir = "tsg_sa/TSG_SA/TSGS_61/Docs"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_sa/TSG_SA/TSGS_61/Docs/"
+			/> 
+	
+	<meeting 
+			name = "RAN-61" 
+			tdoclist = ".3GPP/tsg_ran/TSG_RAN/TSGR_61/Tdoclist/Tdoc_List_RAN_61.csv" 
+			remotedir = "tsg_ran/TSG_RAN/TSGR_61/Docs"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/TSG_RAN/TSGR_61/Docs/"
+			/>
+	
+	<meeting
+			name = "S1-63"
+			tdoclist = "ftp://ftp.3gpp.org/tsg_sa/WG1_Serv/TSGS1_63_Zagreb/SA1_63_tdoc_listing.htm"
+			remotedir = "/tsg_sa/WG1_Serv/TSGS1_63_Zagreb/docs"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_sa/WG1_Serv/TSGS1_63_Zagreb/docs/"
+			/>
+			
+	<!-- August 2013 -->
+	<meeting 
+			name = "R2-83" 
+			tdoclist = ".3GPP/tsg_ran/WG2_RL2/TSGR2_83/Tdoclist/Tdoc_List_RAN2_83.csv" 
+			remotedir = "tsg_ran/WG2_RL2/TSGR2_83/Docs" 
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/WG2_RL2/TSGR2_83/Docs/"
+			/>	
+			
+	<!-- July 2013 -->
+	<meeting 
+			name = "S2-98" 
+			tdoclist = "ftp://ftp.3gpp.org/tsg_sa/WG2_Arch/TSGS2_98_Valencia/ftp-TdocsByTdoc_S2-98.htm" 
+			remotedir = "tsg_sa/WG2_Arch/TSGS2_98_Valencia/Docs/"
+			/> 
+	
+
+	<!-- June 2013 -->		
+	<meeting 
+			name = "SP-60" 
+			tdoclist = "ftp://ftp.3gpp.org/tsg_sa/TSG_SA/TSGS_60/ftp-TdocsByTdoc_SP-60.htm" 
+			remotedir = "tsg_sa/TSG_SA/TSGS_60/Docs"
+			/> 
+			
+    <meeting
+			name = "RAN-60"
+			tdoclist = ".3GPP/tsg_ran/TSG_RAN/TSGR_60/Tdoclist/Tdoc_List_RAN_60.csv"
+			remotedir = "/tsg_ran/TSG_RAN/TSGR_60/Docs"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/TSG_RAN/TSGR_60/Docs/"
+			/>			
+
+	<!-- May 2013 -->
+	<meeting 
+			name = "S2-97" 
+			tdoclist = "ftp://ftp.3gpp.org/tsg_sa/WG2_Arch/TSGS2_97_Busan/ftp-TdocsByTdoc_S2-97.htm" 
+			remotedir = "tsg_sa/WG2_Arch/TSGS2_97_Busan/Docs/"
+			/> 
+			
+	<meeting 
+			name = "R2-82" 
+			tdoclist = ".3GPP/tsg_ran/WG2_RL2/TSGR2_82/Tdoclist/Tdoc_List_RAN2_82.csv" 
+			remotedir = "tsg_ran/WG2_RL2/TSGR2_82/Docs" 
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/WG2_RL2/TSGR2_82/Docs/"
+			/>		
+
+	<!-- April 2013 -->
+	<meeting 
+			name = "S2-96" 
+			tdoclist = "ftp://ftp.3gpp.org/tsg_sa/WG2_Arch/TSGS2_96_San_Diego/ftp-TdocsByTdoc_S2-96.htm" 
+			remotedir = "tsg_sa/WG2_Arch/TSGS2_96_San_Diego/Docs/" 
+			/>
+
+	<!-- April 2013 -->
+	<meeting 
+			name = "R2-81bis" 
+			tdoclist = ".3GPP/tsg_ran/WG2_RL2/TSGR2_81bis/Tdoclist/Tdoc_List_RAN2_81bis.csv" 
+			remotedir = "tsg_ran/WG2_RL2/TSGR2_81bis/Docs"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/WG2_RL2/TSGR2_81bis/Docs/"
+			/>
+ 
+	<!-- March 2013-->
+	<meeting  
+			name = "SP-59" 
+			tdoclist = "ftp://ftp.3gpp.org/tsg_sa/TSG_SA/TSGS_59/ftp-TdocsByTdoc_SP-59.htm" 
+			remotedir = "tsg_sa/TSG_SA/TSGS_59/Docs"
+			/> 
+			
+	<!-- Feb 2013 -->
+	<meeting 
+			name = "S2-95" 
+			tdoclist = "ftp://ftp.3gpp.org/tsg_sa/WG2_Arch/TSGS2_95_Prague/ftp-TDListByTD_S2-95.htm" 
+			remotedir = "tsg_sa/WG2_Arch/TSGS2_95_Prague/Docs/" 
+			/>
+	<meeting
+			name = "RAN-59"
+			tdoclist = ".3GPP/tsg_ran/TSG_RAN/TSGR_59/Tdoclist/Tdoc_List_RAN_59.csv"
+			remotedir = "/tsg_ran/TSG_RAN/TSGR_59/Docs"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/TSG_RAN/TSGR_59/Docs/"
+			/>
+	
+	<!-- Jan 2013 -->
+	<meeting 
+			name = "R2-81" 
+			tdoclist = ".3GPP/tsg_ran/WG2_RL2/TSGR2_81/Tdoclist/Tdoc_List_RAN2_81.csv" 
+			remotedir = "tsg_ran/WG2_RL2/TSGR2_81/Docs" 
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/WG2_RL2/TSGR2_81/Docs/"
+			/>
+			
+	<!-- December 2012-->
+	<meeting  
+			name = "SP-58" 
+			tdoclist = "ftp://ftp.3gpp.org/tsg_sa/TSG_SA/TSGS_58/SA-58-DAD_TDList_2012-12-12_12h22.htm" 
+			remotedir = "tsg_sa/TSG_SA/TSGS_58/Docs"
+			/>
+			
+	<meeting 
+			name = "R2-80" 
+			tdoclist = ".3GPP/tsg_ran/WG2_RL2/TSGR2_80/Tdoclist/Tdoc_List_RAN2_80.csv" 
+			remotedir = "tsg_ran/WG2_RL2/TSGR2_80/Docs" 
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/WG2_RL2/TSGR2_80/Docs/"
+			/>
+	
+	<meeting 
+			name = "RAN-58" 
+			tdoclist = ".3GPP/tsg_ran/TSG_RAN/TSGR_58/Tdoclist/Tdoc_List_RAN_58.csv" 
+			remotedir = "tsg_ran/TSG_RAN/TSGR_58/Docs"
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/TSG_RAN/TSGR_58/Docs/"
+			/>
+
+	<!-- October, 2012 -->
+	<meeting 
+			name = "R2-79bis" 
+			tdoclist = ".3GPP/tsg_ran/WG2_RL2/TSGR2_79bis/Tdoclist/Tdoc_List_RAN2_79bis.csv" 
+			remotedir = "tsg_ran/WG2_RL2/TSGR2_79bis/Docs" 
+			ftp_prefix = "ftp://ftp.3gpp.org/tsg_ran/WG2_RL2/TSGR2_79bis/Docs/"
+			/>
+	
+	<table name = "TDOC_TABLE" />
+
+
+</docii3gpp>

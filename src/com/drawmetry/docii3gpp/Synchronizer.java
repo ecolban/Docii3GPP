@@ -41,9 +41,9 @@ public class Synchronizer implements Runnable {
 	@Override
 	public void run() {
 		LOGGER.log(Level.INFO, String.format("%s\n", STARTING_SYNC));
+		BufferedReader input = null;
 		try {
 			PageHandler handler = PageHandlerFactory.getInstance(ui.getMeeting());
-			BufferedReader input = null;
 			if (hostUrl.getAuthority() == null) { // case where the input is a
 													// local file
 				File file = new File(hostUrl.toURI());
@@ -56,6 +56,9 @@ public class Synchronizer implements Runnable {
 			}
 			String line = null;
 			while ((line = input.readLine()) != null && !isAborted()) {
+				if(line.matches(".*3920.*")) {
+					System.out.println("STOP");
+				}
 				handler.processLine(line);
 			}
 
@@ -69,6 +72,14 @@ public class Synchronizer implements Runnable {
 			LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
 		} catch (PageHandlerFactoryException ex) {
 			LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
+		} finally {
+			if(input != null) {
+				try {
+					input.close();
+				} catch (IOException ex) {
+					LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
+				}
+			}
 		}
 		if (!isAborted()) {
 			LOGGER.log(Level.INFO, String.format("%s\n", SYNC_COMPLETE));

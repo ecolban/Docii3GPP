@@ -31,20 +31,20 @@ public class S2PageHandler_96 implements PageHandler {
 
 	private static final String[] ENTRY_LINES = new String[] {
 			"\\s*<TR VALIGN=TOP>", // ;
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Chair
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Rx
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Agenda Item
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Agenda Item Title
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // TDoc #
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Doc type
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Doc title
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Source
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // WI
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Rev_by
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Rev_of
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // LS_source_file
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Comment
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Decision
+			"\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // Chair
+			"\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // Rx
+			"\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // Agenda Item
+			"\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // Agenda Item Title
+			"\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // TDoc #
+			"\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // Doc type
+			"\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // Doc title
+			"\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // Source
+			"\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // WI
+			"\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // Rev_by
+			"\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // Rev_of
+			"\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // LS_source_file
+			"\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // Comment
+			"\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // Decision
 			"\\s*</TR>" };
 	private static final Pattern[] ENTRY_PATTERNS = new Pattern[ENTRY_LINES.length];
 
@@ -107,23 +107,23 @@ public class S2PageHandler_96 implements PageHandler {
 		case 0:
 			// "\\s*<TR VALIGN=TOP>", // ;
 		case 1:
-			// "\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Chair
+			// "\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // Chair
 		case 2:
-			// "\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Rx
+			// "\\s*<TD .*><FONT .*?>(.*)</FONT></TD>", // Rx
 			lineCount++;
 			break;
 		case 3:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Agenda Item
+			// "<TD .*><FONT .*?>(.*)</FONT></TD>", //Agenda Item
 			agendaItem = matcher.group(1);
 			lineCount++;
 			break;
 		case 4:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Agenda Item Title
+			// "<TD .*><FONT .*?>(.*)</FONT></TD>", //Agenda Item Title
 			agendaTitle = matcher.group(1);
 			lineCount++;
 			break;
 		case 5:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //TDoc #
+			// "<TD .*><FONT .*?>(.*)</FONT></TD>", //TDoc #
 			String tdocSpec = matcher.group(1);
 			Matcher tdocMatcher = TDOC_PATTERN.matcher(tdocSpec);
 			if (tdocMatcher.matches()) {
@@ -139,27 +139,27 @@ public class S2PageHandler_96 implements PageHandler {
 			lineCount++;
 			break;
 		case 6:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Doc type
+			// "<TD .*><FONT .*?>(.*)</FONT></TD>", //Doc type
 			docType = matcher.group(1);
 			lineCount++;
 			break;
 		case 7:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Doc title
+			// "<TD .*><FONT .*?>(.*)</FONT></TD>", //Doc title
 			docTitle = matcher.group(1);
 			lineCount++;
 			break;
 		case 8:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Source
+			// "<TD .*><FONT .*?>(.*)</FONT></TD>", //Source
 			source = matcher.group(1);
 			lineCount++;
 			break;
 		case 9:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //WI
+			// "<TD .*><FONT .*?>(.*)</FONT></TD>", //WI
 			workItem = matcher.group(1);
 			lineCount++;
 			break;
 		case 10:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Rev_by
+			// "<TD .*><FONT .*?>(.*)</FONT></TD>", //Rev_by
 			tdocMatcher = TDOC_PATTERN.matcher(matcher.group(1));
 			if (tdocMatcher.matches()) {
 				revByTDoc = tdocMatcher.group(3);
@@ -169,7 +169,7 @@ public class S2PageHandler_96 implements PageHandler {
 			lineCount++;
 			break;
 		case 11:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Rev_of
+			// "<TD .*><FONT .*?>(.*)</FONT></TD>", //Rev_of
 			tdocMatcher = TDOC_PATTERN.matcher(matcher.group(1));
 			if (tdocMatcher.matches()) {
 				revOfTDoc = tdocMatcher.group(3);
@@ -179,17 +179,17 @@ public class S2PageHandler_96 implements PageHandler {
 			lineCount++;
 			break;
 		case 12:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //LS_source_file
+			// "<TD .*><FONT .*?>(.*)</FONT></TD>", //LS_source_file
 			lsSource = matcher.group(1);
 			lineCount++;
 			break;
 		case 13:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Comment
+			// "<TD .*><FONT .*?>(.*)</FONT></TD>", //Comment
 			comment = matcher.group(1);
 			lineCount++;
 			break;
 		case 14:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Decision
+			// "<TD .*><FONT .*?>(.*)</FONT></TD>", //Decision
 			decision = matcher.group(1);
 			lineCount++;
 			break;
