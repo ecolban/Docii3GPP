@@ -6,6 +6,8 @@ import com.drawmetry.docii3gpp.DocEntry;
 import com.drawmetry.docii3gpp.DocumentObject;
 import com.drawmetry.docii3gpp.UI;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.logging.Level;
@@ -48,9 +50,10 @@ public class SPPageHandler_60 implements PageHandler {
 			"\\s*</TR>" };
 	private static final Pattern[] entryPattern = new Pattern[ENTRY_STRINGS.length];
 
-//	private static final String AGENDA_ITEM = "<TD .*><FONT [^>]*>(.*)</FONT></TD>"
-//			+ "\\s*<TD .*><FONT [^>]*>(.)</FONT></TD>"
-//			+ "\\s*<TD .*><FONT [^>]*></FONT></TD>";
+	// private static final String AGENDA_ITEM =
+	// "<TD .*><FONT [^>]*>(.*)</FONT></TD>"
+	// + "\\s*<TD .*><FONT [^>]*>(.)</FONT></TD>"
+	// + "\\s*<TD .*><FONT [^>]*></FONT></TD>";
 
 	static {
 		for (int i = 0; i < ENTRY_STRINGS.length; i++) {
@@ -95,13 +98,20 @@ public class SPPageHandler_60 implements PageHandler {
 
 	}
 
+	public void processInput(BufferedReader input) throws MalformedURLException, IOException {
+		String line = null;
+		while ((line = input.readLine()) != null) {
+			processLine(line);
+		}
+	}
+
 	/**
 	 * Handles one line read from the page.
 	 * 
 	 * @param line
 	 * @throws MalformedURLException
 	 */
-	public void processLine(String line) throws MalformedURLException {
+	private void processLine(String line) throws MalformedURLException {
 
 		Matcher matcher = entryPattern[patternIndex].matcher(line);
 		switch (patternIndex) {

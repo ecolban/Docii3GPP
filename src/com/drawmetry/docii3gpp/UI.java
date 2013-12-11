@@ -221,14 +221,6 @@ public class UI extends JFrame implements Runnable, ClipboardOwner {
 		this.currentMeeting = meetings[meetings.length - 1];
 	}
 
-	/**
-	 * @param args
-	 *            the command line arguments
-	 */
-	public static void main(String args[]) {
-		Configuration.initialize();
-		SwingUtilities.invokeLater(new UI());
-	}
 
 	@Override
 	public void run() {

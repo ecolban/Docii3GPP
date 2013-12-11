@@ -14,11 +14,4 @@
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>src/com/drawmetry/docii3gpp/dociiconfig.xml</name>
-			<type>1</type>
-			<location>C:/Users/ecolban/.docii3gpp/dociiconfig.xml</location>
-		</link>
-	</linkedResources>
 </projectDescription>

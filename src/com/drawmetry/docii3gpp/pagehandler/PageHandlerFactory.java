@@ -1,5 +1,6 @@
 package com.drawmetry.docii3gpp.pagehandler;
 
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 
 import com.drawmetry.docii3gpp.Configuration;
@@ -22,8 +23,8 @@ public class PageHandlerFactory {
 		handlerMap.put("S2-9[6-9]E?(bis)?", S2PageHandler_96.class);
 		handlerMap.put("S2-1\\d\\d(bis)?", S2PageHandler_96.class);
 		handlerMap.put("SP-5[8-9]", SPPageHandler_58.class);
-		handlerMap.put("SP-60", SPPageHandler_60.class);
-		handlerMap.put("SP-6[1-9]", SPPageHandler_61.class);
+//		handlerMap.put("SP-60", SPPageHandler_60.class);
+		handlerMap.put("SP-6[0-9]", SPPageHandler_60.class);
 	}
 	
 	/**
@@ -53,7 +54,10 @@ public class PageHandlerFactory {
 	
 	public static void main(String[] args) {
 		try {
-			Configuration.initialize();
+			File homeDir = new File(System.getProperty("user.home"));
+			assert homeDir.exists();
+			File configFile = new File(homeDir, ".docii3gpp/dociiconfig.xml");
+			Configuration.read(configFile);
 			PageHandler handler = PageHandlerFactory.getInstance("R2-81bis");
 			System.out.println(handler.getClass());
 		} catch (PageHandlerFactoryException e) {

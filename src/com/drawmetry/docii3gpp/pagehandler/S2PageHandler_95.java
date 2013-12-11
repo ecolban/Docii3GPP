@@ -6,6 +6,8 @@ import com.drawmetry.docii3gpp.DocEntry;
 import com.drawmetry.docii3gpp.DocumentObject;
 import com.drawmetry.docii3gpp.UI;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.logging.Level;
@@ -85,13 +87,20 @@ public class S2PageHandler_95 implements PageHandler {
 		this.table = Configuration.getTables()[0];
 	}
 
+	public void processInput(BufferedReader input) throws MalformedURLException, IOException {
+		String line = null;
+		while ((line = input.readLine()) != null) {
+			processLine(line);
+		}
+	}
+
 	/**
 	 * Handles one line read from the page.
 	 * 
 	 * @param line
 	 * @throws MalformedURLException
 	 */
-	public void processLine(String line) throws MalformedURLException {
+	private void processLine(String line) throws MalformedURLException {
 
 		Matcher matcher = ENTRY_PATTERNS[patternIndex].matcher(line);
 		if (!matcher.matches()) {

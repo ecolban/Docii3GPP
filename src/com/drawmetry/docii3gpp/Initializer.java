@@ -11,42 +11,51 @@ import java.util.logging.StreamHandler;
 import javax.swing.SwingUtilities;
 
 /**
- *
- *  @author Erik Colban &copy; 2012 <br> All Rights Reserved Worldwide
+ * 
+ * @author Erik Colban &copy; 2012 <br>
+ *         All Rights Reserved Worldwide
  */
 public class Initializer {
 
-    private static final Logger LOGGER = Logger.getLogger("com.drawmetry.docii3gpp");
+	private static final Logger LOGGER = Logger
+			.getLogger("com.drawmetry.docii3gpp");
+	
+	private File configFile;
 
-    public static void main(String[] args) {
-        LOGGER.setLevel(Level.ALL);
-        new Initializer().checkConfigurationSettings();
-        Configuration.initialize();
-        SwingUtilities.invokeLater(new UI());
-    }
+	public static void main(String[] args) {
+		LOGGER.setLevel(Level.ALL);
+		Initializer initializer = new Initializer();
+		if (initializer.checkConfigurationSettings()) {
+			Configuration.read(initializer.configFile);
+			SwingUtilities.invokeLater(new UI());
+		}
+	}
 
-    private void checkConfigurationSettings() {
-        File file = new File(System.getProperty("user.home"));
-        assert file.exists();
-        file = new File(file, ".dociimentor");
-        boolean configDirExists = file.exists();
-        if (!configDirExists) {
-            configDirExists = file.mkdir();
-        }
-        if (!configDirExists) {
-            assert false;
-        }
-        file = new File(file, "dociiconfig.xml");
-        if(!file.exists()) {
-        	LOGGER.log(Level.SEVERE, "dociiconfig.xml not found");
-        }
-        try {
-            File logFile = new File(System.getProperty("user.home"), ".docii3gpp/logfile.txt");
-            Handler logFileHandler = new StreamHandler(
-                    new FileOutputStream(logFile), new SimpleFormatter());
-            LOGGER.addHandler(logFileHandler);
-        } catch (FileNotFoundException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
-        }
-    }
+	private boolean checkConfigurationSettings() {
+		File homeDir = new File(System.getProperty("user.home"));
+		assert homeDir.exists();
+		// File docii3gppHome = new File(homeDir, ".docii3gpp");
+		// boolean configDirExists = docii3gppHome.exists();
+		// if (!configDirExists) {
+		// configDirExists = docii3gppHome.mkdir();
+		// }
+		// if (!configDirExists) {
+		// assert false;
+		// }
+		configFile = new File(homeDir, ".docii3gpp/dociiconfig.xml");
+		if (!configFile.exists()) {
+			LOGGER.log(Level.SEVERE, homeDir + "/.docii3gpp/dociiconfig.xml not found");
+			return false;
+		}
+		try {
+			File logFile = new File(homeDir, ".docii3gpp/logfile.txt");
+			Handler logFileHandler = new StreamHandler(new FileOutputStream(
+					logFile), new SimpleFormatter());
+			LOGGER.addHandler(logFileHandler);
+		} catch (FileNotFoundException ex) {
+			LOGGER.log(Level.SEVERE, null, ex);
+			return false;
+		}
+		return true;
+	}
 }

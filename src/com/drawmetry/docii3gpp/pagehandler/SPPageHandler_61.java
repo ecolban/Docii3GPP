@@ -6,6 +6,8 @@ import com.drawmetry.docii3gpp.DocumentObject;
 import com.drawmetry.docii3gpp.UI;
 import com.drawmetry.docii3gpp.database.DataAccessObject;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.logging.Level;
@@ -82,13 +84,20 @@ public class SPPageHandler_61 implements PageHandler {
 
 	}
 
+	public void processInput(BufferedReader input) throws MalformedURLException, IOException {
+		String line = null;
+		while ((line = input.readLine()) != null) {
+			processLine(line);
+		}
+	}
+
 	/**
 	 * Handles one line read from the page.
 	 * 
 	 * @param line
 	 * @throws MalformedURLException
 	 */
-	public void processLine(String line) throws MalformedURLException {
+	private void processLine(String line) throws MalformedURLException {
 		lineBuilder.append(line);
 		if (oddQuotes ^= oddQuotes(line)) { // entry spans multiple lines
 			lineBuilder.append(" ");

@@ -6,7 +6,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -32,7 +31,6 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class Configuration extends DefaultHandler {
 
-	private static File configFile;
 	private String user;
 	private String password;
 	private String driver;
@@ -52,11 +50,10 @@ public class Configuration extends DefaultHandler {
 	/**
 	 * Private constructor. Used to instantiate the single instance of this
 	 * class.
+	 * @param configFile TODO
 	 */
-	private Configuration() {
-		configFile = new File(System.getProperty("user.home"),
-				".docii3gpp/dociiconfig.xml");
-		parseDocument();
+	private Configuration(File configFile) {
+		parseDocument(configFile);
 	}
 
 	private class Meeting {
@@ -79,17 +76,9 @@ public class Configuration extends DefaultHandler {
 
 	}
 
-	public static void main(String[] args) {
-		Configuration.initialize();
-		for (Iterator<String> iterator = Configuration.meetings.keySet()
-				.iterator(); iterator.hasNext();) {
-			Meeting meeting = meetings.get(iterator.next());
-			System.out.println(meeting.tDocLocation);
-		}
-	}
 
-	public static void initialize() {
-		instance = new Configuration();
+	public static void read(File configFile) {
+		instance = new Configuration(configFile);
 	}
 
 	/**
@@ -189,7 +178,7 @@ public class Configuration extends DefaultHandler {
 		String[] a = new String[0];
 		return meetingNames.toArray(a);
 	}
-	
+
 	public static File getLocalFilesRoot() {
 		return localFilesRoot;
 	}
@@ -221,8 +210,6 @@ public class Configuration extends DefaultHandler {
 	public static String getFtpPrefix(String meetingName) {
 		return Configuration.meetings.get(meetingName).ftpPrefix;
 	}
-
-	
 
 	// Event Handlers
 
@@ -256,18 +243,18 @@ public class Configuration extends DefaultHandler {
 
 	}
 
-	private void parseDocument() {
-	
+	private void parseDocument(File configFile) {
+
 		// get a factory
 		SAXParserFactory factory = SAXParserFactory.newInstance();
 		try {
-	
+
 			// get a new instance of parser
 			SAXParser parser = factory.newSAXParser();
-	
+
 			// parse the file and also register this class for call backs
 			parser.parse(configFile, this);
-	
+
 		} catch (ParserConfigurationException ex) {
 			Logger.getLogger("com.drawmetry.docii3gpp").log(Level.SEVERE, null,
 					ex);
@@ -387,7 +374,7 @@ public class Configuration extends DefaultHandler {
 				} else {
 					File file = new File(urlString);
 					if (!file.isAbsolute()) {
-						file = new File(System.getProperty("user.home"),
+						file = new File(localFilesRoot,
 								file.getPath());
 					}
 					url = file.toURI().toURL();

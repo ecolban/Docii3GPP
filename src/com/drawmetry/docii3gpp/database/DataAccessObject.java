@@ -3,6 +3,8 @@ package com.drawmetry.docii3gpp.database;
 import com.drawmetry.docii3gpp.Configuration;
 import com.drawmetry.docii3gpp.DocEntry;
 import com.drawmetry.docii3gpp.DocumentObject;
+import com.drawmetry.docii3gpp.Initializer;
+import com.drawmetry.docii3gpp.UI;
 import com.sun.rowset.WebRowSetImpl;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -25,6 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.sql.rowset.WebRowSet;
+import javax.swing.SwingUtilities;
 
 /**
  * 
@@ -132,26 +135,30 @@ public class DataAccessObject {
 	 */
 	public static void main(String[] args) {
 		// dump("WG80211", new File("D:\\Database\\.docii3gpp\\dump.xml"));
-		Configuration.initialize();
+		LOGGER.setLevel(Level.ALL);
+		File homeDir = new File(System.getProperty("user.home"));
+		assert homeDir.exists();
+		File configFile = new File(homeDir, ".docii3gpp/dociiconfig.xml");
+		Configuration.read(configFile);
 		DataAccessObject db = DataAccessObject.getInstance();
 		db.connect();
 		try {
 			Statement stmt = db.dbConnection.createStatement();
 
-			stmt.execute("alter table TDOC_TABLE alter column  REV_OF set data type CHAR(20)");
-			db.dbConnection.commit();
+//			stmt.execute("alter table TDOC_TABLE alter column  REV_OF set data type CHAR(20)");
+//			db.dbConnection.commit();
 
-//			 ResultSet rs = stmt
-//			 .executeQuery("select ID from TDOC_TABLE where MEETING like 'R1-74bis' and TDOC not like 'R1-%'");
-//			 int count = 0;
-//			 while (rs.next()) {
-//			 int id = rs.getInt("ID");
-//			 // System.out.println("" + db.getDocumentOject("WG80221", id));
-//			 db.deleteRecord("TDOC_TABLE", id);
-//			 count++;
-//			 db.dbConnection.commit();
-//			 }
-//			 System.out.println("count = " + count);
+			 ResultSet rs = stmt
+			 .executeQuery("select ID from TDOC_TABLE where MEETING like 'R2-84' and TDOC not like 'R2-%'");
+			 int count = 0;
+			 while (rs.next()) {
+			 int id = rs.getInt("ID");
+			 // System.out.println("" + db.getDocumentOject("WG80221", id));
+			 db.deleteRecord("TDOC_TABLE", id);
+			 count++;
+			 db.dbConnection.commit();
+			 }
+			 System.out.println("count = " + count);
 		} catch (SQLException ex) {
 			LOGGER.log(Level.SEVERE, ex.getMessage());
 		}

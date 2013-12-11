@@ -1,9 +1,12 @@
 package com.drawmetry.docii3gpp.pagehandler;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.net.MalformedURLException;
 
 public interface PageHandler {
-	
-	public void processLine(String line) throws MalformedURLException;
+
+	public void processInput(BufferedReader reader)
+			throws MalformedURLException, IOException;
 
 }

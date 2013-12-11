@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.SocketException;
@@ -43,7 +44,6 @@ public class Synchronizer implements Runnable {
 		LOGGER.log(Level.INFO, String.format("%s\n", STARTING_SYNC));
 		BufferedReader input = null;
 		try {
-			PageHandler handler = PageHandlerFactory.getInstance(ui.getMeeting());
 			if (hostUrl.getAuthority() == null) { // case where the input is a
 													// local file
 				File file = new File(hostUrl.toURI());
@@ -51,16 +51,16 @@ public class Synchronizer implements Runnable {
 			} else { // case where the input is a file on an ftp server (e.g.
 						// ftp.3gpp.org).
 				URLConnection con = (URLConnection) hostUrl.openConnection();
-				input = new BufferedReader(new InputStreamReader(
-						con.getInputStream()));
+				con.connect();
+				InputStream is = con.getInputStream();
+				input = new BufferedReader(new InputStreamReader(is));
 			}
-			String line = null;
-			while ((line = input.readLine()) != null && !isAborted()) {
-				if(line.matches(".*3920.*")) {
-					System.out.println("STOP");
-				}
-				handler.processLine(line);
-			}
+			PageHandler handler = PageHandlerFactory.getInstance(ui.getMeeting());
+			handler.processInput(input);
+//			String line = null;
+//			while ((line = input.readLine()) != null && !isAborted()) {
+//				handler.processInput(line);
+//			}
 
 		} catch (SocketException ex) {
 			LOGGER.log(Level.INFO, "{0}\n", SYNC_ABORTED);

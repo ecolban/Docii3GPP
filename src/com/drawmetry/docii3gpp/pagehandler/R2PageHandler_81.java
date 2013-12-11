@@ -6,17 +6,16 @@ import com.drawmetry.docii3gpp.DocumentObject;
 import com.drawmetry.docii3gpp.UI;
 import com.drawmetry.docii3gpp.database.DataAccessObject;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
-//import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Parser of XLS file containing all document information that 3GPP SA2 MCC
- * generates at R2 meetings since meeting 81. 
+ * generates at R2 meetings since meeting 81.
  * 
  * @author Erik Colban &copy; 2013 <br>
  *         All Rights Reserved Worldwide
@@ -37,13 +36,7 @@ public class R2PageHandler_81 implements PageHandler {
 	private static final int WI_COLUMN = 14;
 	private static final int RELATED_TDOC_COLUMN = 15;
 	private static final int COMMENT_COLUMN = 16;
-
-	private static final String CSV_FIELD_REGEXP = "(?:\"((?:[^\"]|\"\")*)\"|([^,]*))";
-	private static final Pattern COMMA_CSV_FIELD_PATTERN = Pattern.compile(","
-			+ CSV_FIELD_REGEXP);
-
-	private static final Pattern LINE_PATTERN = Pattern.compile(//
-			"^" + CSV_FIELD_REGEXP + ",(Yes|No)(," + CSV_FIELD_REGEXP + "){15}");
+	private static final int NUM_COLUMNS = 17;
 
 	StringBuilder lineBuilder = new StringBuilder();
 	boolean oddQuotes = false;
@@ -69,110 +62,50 @@ public class R2PageHandler_81 implements PageHandler {
 
 	}
 
-	/**
-	 * Used for test purposes only
-	 */
-	private R2PageHandler_81() {
-		this.table = null;
-		this.ftpPrefix = "ftp://ftp.3gpp.org/tsg_ran/WG2_RL2/TSGR2_81/Docs/";
-		db = null;
-		meeting = "R2-81";
-	}
-
-	/**
-	 * Handles one line read from the page.
-	 * 
-	 * @param line
-	 * @throws MalformedURLException
-	 */
-	public void processLine(String line) throws MalformedURLException {
-		if (oddQuotes) {
-			lineBuilder.append(" ");
-		}
-		lineBuilder.append(line);
-		if (!(oddQuotes ^= oddQuotes(line))) {
-			processEntry(lineBuilder.toString());
-			lineBuilder.setLength(0);
+	public void processInput(BufferedReader input)
+			throws MalformedURLException, IOException {
+		CSVReader csvReader = new CSVReader(input, NUM_COLUMNS);
+		String[] row;
+		while ((row = csvReader.readRow()) != null) {
+			processRow(row);
 		}
 	}
 
-	private boolean oddQuotes(String line) {
-		boolean result = false;
-		for (int i = 0; i < line.length(); i++) {
-			if (line.charAt(i) == '\"') {
-				result = !result;
-			}
+	private void processRow(String[] fields) {
+
+		String comment = fields[COMMENT_COLUMN];
+		if (!fields[FURTHER_INFO_COLUMN].isEmpty()) {
+			comment = comment + " " + fields[FURTHER_INFO_COLUMN];
 		}
-		return result;
-	}
-
-	private void processEntry(String line) {
-		Matcher lineMatcher = LINE_PATTERN.matcher(line);
-		if (lineMatcher.lookingAt()) {
-			line = "," + line.substring(lineMatcher.start(), lineMatcher.end());
-			String[] fields = new String[17];
-			Matcher fieldMatcher = COMMA_CSV_FIELD_PATTERN.matcher(line);
-			String field = null;
-
-			for (int i = 0; fieldMatcher.find(); i++) {
-				if ((field = fieldMatcher.group(1)) != null) {
-					field = field.replace("\"\"", "\"");
-				} else {
-					field = fieldMatcher.group(2);
-				}
-				fields[i] = field;
+		if (!fields[RELATED_TDOC_COLUMN].isEmpty()) {
+			comment = comment + " *** Related TDocs: "
+					+ fields[RELATED_TDOC_COLUMN];
+		}
+		DocumentObject doc;
+		try {
+			doc = new DocumentObject(-1, meeting,
+					"",
+					fields[AGENDA_ITEM_COLUMN], //
+					ftpPrefix + fields[TDOC_COLUMN] + ".zip",
+					fields[TDOC_COLUMN], //
+					fields[TYPE_COLUMN], //
+					fields[TITLE_COLUMN], //
+					fields[SOURCE_COLUMN], //
+					fields[WI_COLUMN], "", "",//
+					fields[LS_SOURCE_COLUMN], //
+					comment, //
+					fields[DECISION_COLUMN], "");
+			List<DocEntry> entries = db.findEntries(table, doc.getTDoc());
+			if (entries.isEmpty()) {
+				db.saveRecord(table, doc);
+			} else {
+				DocEntry entry = entries.get(0);
+				db.mergeRecord(table, entry.getId(), doc);
 			}
-
-			String decision = fields[DECISION_COLUMN];
-			String agendaTitle = fields[AGENDA_ITEM_COLUMN];
-			String url = ftpPrefix + fields[TDOC_COLUMN] + ".zip";
-			String tDoc = fields[TDOC_COLUMN];
-			String docTitle = fields[TITLE_COLUMN];
-			String source = fields[SOURCE_COLUMN];
-			String docType = fields[TYPE_COLUMN];
-			String lsSource = fields[LS_SOURCE_COLUMN];
-			String workItem = fields[WI_COLUMN];
-			String comment = fields[COMMENT_COLUMN];
-			if (!fields[FURTHER_INFO_COLUMN].isEmpty()) {
-				comment = comment + " " + fields[FURTHER_INFO_COLUMN];
-			}
-			if (!fields[RELATED_TDOC_COLUMN].isEmpty()) {
-				comment = comment + " *** Related TDocs: "
-						+ fields[RELATED_TDOC_COLUMN];
-			}
-			DocumentObject doc;
-			try {
-				doc = new DocumentObject(-1, meeting, "", agendaTitle, url,
-						tDoc, docType, docTitle, source, workItem, "", "",
-						lsSource, comment, decision, "");
-				List<DocEntry> entries = db.findEntries(table, doc.getTDoc());
-				if (entries.isEmpty()) {
-					db.saveRecord(table, doc);
-				} else {
-					DocEntry entry = entries.get(0);
-					db.mergeRecord(table, entry.getId(), doc);
-				}
-				// System.out.println(doc);
-			} catch (MalformedURLException ex) {
-				LOGGER.log(Level.SEVERE, null, ex);
-			}
+			// System.out.println(doc);
+		} catch (MalformedURLException ex) {
+			LOGGER.log(Level.SEVERE, null, ex);
 		}
 	}
 
-	/**
-	 * Used for test purposes only
-	 * 
-	 * @param args
-	 *            ignored
-	 */
-	public static void main(String[] args) {
-		String line = "\"03.2: LSin: LTE, relevance\",No,noted,,R2-130003,"
-				+ "LS on UE capability for the joint operation of downlink CoMP and CA (R1-125392; contact: Huawei),"
-				+ "RAN1,LSin,,,,,"
-				+ "to: RAN2; received on Fri of RAN2 #80 as R2-126113 and not treated there but taken into account in email discussion [80#14]; no LS answer,REL-11,COMP_LTE_DL-Core,"
-				+ "\"R1-125392, R2-126113\",,,,,,,,,,,,,,,,";
-		R2PageHandler_81 handler = new R2PageHandler_81();
-		handler.processEntry(line);
-
-	}
 }

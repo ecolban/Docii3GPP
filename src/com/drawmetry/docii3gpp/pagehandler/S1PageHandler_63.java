@@ -37,7 +37,7 @@ public class S1PageHandler_63 implements PageHandler {
 	private static final Pattern TDOC_PATTERN = Pattern
 			.compile("(?:<a .* href=\"(.*\\.zip)\">)?([CGRS][1-5P]-\\d{6})(</a>)");
 	private static final Pattern CHAR_PATTERN = Pattern
-			.compile(">(.+?)<");
+			.compile(">([^<>]+)<");
 	private static final Pattern TR_START_PATTERN = Pattern
 			.compile("^\\s*<tr.*>\\s*$");
 	private static final Pattern TD_START_PATTERN = Pattern
@@ -109,13 +109,21 @@ public class S1PageHandler_63 implements PageHandler {
 		this.ftpPrefix = "ftp://ftp.3gpp.org/tsg_sa/WG1_Serv/TSGS1_63_Zagreb/docs/";
 	}
 
+	
+	public void processInput(BufferedReader input) throws MalformedURLException, IOException {
+		String line = null;
+		while ((line = input.readLine()) != null) {
+			processLine(line);
+		}
+	}
+
 	/**
 	 * Handles one line read from the page.
 	 * 
 	 * @param line
 	 * @throws MalformedURLException
 	 */
-	public void processLine(String line) throws MalformedURLException {
+	private void processLine(String line) throws MalformedURLException {
 		switch (currentState) {
 		case OUTSIDE_TR:
 			if (TR_START_PATTERN.matcher(line).matches()) {
@@ -209,9 +217,6 @@ public class S1PageHandler_63 implements PageHandler {
 			if (m.find()) {
 				tDoc = m.group(2);
 				url = ftpPrefix + tDoc + ".zip";
-				if(tDoc.equals("S1-135014")){
-					System.out.println("STOP");
-				}
 			} else {
 				docEntrymatch = false;
 			}
