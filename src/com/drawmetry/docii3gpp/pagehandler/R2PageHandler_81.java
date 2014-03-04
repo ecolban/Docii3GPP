@@ -49,9 +49,6 @@ public class R2PageHandler_81 implements PageHandler {
 	/**
 	 * Constructor
 	 * 
-	 * @param ui
-	 *            the {@link UI} instance that has all the contextual
-	 *            information needed.
 	 * 
 	 */
 	public R2PageHandler_81(String meeting) {
@@ -72,6 +69,10 @@ public class R2PageHandler_81 implements PageHandler {
 	}
 
 	private void processRow(String[] fields) {
+		
+		if (!fields[TDOC_COLUMN].matches("R2-\\d{6}")) {
+			return;
+		}
 
 		String comment = fields[COMMENT_COLUMN];
 		if (!fields[FURTHER_INFO_COLUMN].isEmpty()) {

@@ -21,29 +21,39 @@ import java.util.regex.Pattern;
  * @author Erik Colban &copy; 2013 <br>
  *         All Rights Reserved Worldwide
  */
-public class SPPageHandler_58 implements PageHandler {
-	
-	private static final Logger LOGGER = Logger.getLogger("com.drawmetry.docii3gpp");
+public class SPPageHandler_63 implements PageHandler {
+
+	private static final Logger LOGGER = Logger
+			.getLogger("com.drawmetry.docii3gpp");
 
 	private static final Pattern TDOC_PATTERN = Pattern
 			.compile("(<a .* href=\"(.*\\.zip)\">)?([CGRS][1-5P]-\\d{6})(</a>)?");
 
 	private static final String[] ENTRY_STRINGS = new String[] {
-			"\\s*<TR VALIGN=TOP>", //
+	/*
+		 */
+	"\\s*<TR VALIGN=TOP>", // ;
+			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Agenda Item
+			// "\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Agenda Item Title
 			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // TDoc #
 			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Doc title
 			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Source
+			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Summary
 			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Doc type
 			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Doc for
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Agenda Item
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Avail
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Treated
 			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Decision
-			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Wdrn
 			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Rev_by
 			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Rev_of
+			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // LS_source_file
+			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Comment
+//			"\\s*<TD .*><FONT [^>]*>(.*)</FONT></TD>", // Rx
 			"\\s*</TR>" };
 	private static final Pattern[] entryPattern = new Pattern[ENTRY_STRINGS.length];
+
+	// private static final String AGENDA_ITEM =
+	// "<TD .*><FONT [^>]*>(.*)</FONT></TD>"
+	// + "\\s*<TD .*><FONT [^>]*>(.)</FONT></TD>"
+	// + "\\s*<TD .*><FONT [^>]*></FONT></TD>";
 
 	static {
 		for (int i = 0; i < ENTRY_STRINGS.length; i++) {
@@ -64,11 +74,13 @@ public class SPPageHandler_58 implements PageHandler {
 	private String revOfTDoc;
 	private String lsSource;
 	private String comment;
-	private String table;
+	private final String table;
 
 	private final DataAccessObject db;
 
 	private final String meeting;
+
+	private final String ftpPrefix;
 
 	/**
 	 * Constructor
@@ -78,10 +90,11 @@ public class SPPageHandler_58 implements PageHandler {
 	 *            information needed.
 	 * 
 	 */
-	public SPPageHandler_58(String meeting) {
+	public SPPageHandler_63(String meeting) {
 		this.db = DataAccessObject.getInstance();
 		this.meeting = meeting;
-		this.table  = Configuration.getTables()[0];
+		this.table = Configuration.getTables()[0];
+		this.ftpPrefix = Configuration.getFtpPrefix(meeting);
 
 	}
 
@@ -110,14 +123,24 @@ public class SPPageHandler_58 implements PageHandler {
 			}
 			break;
 		case 1:
+			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Agenda Item
+			if (matcher.matches()) {
+				agendaItem = matcher.group(1);
+				patternIndex++;
+			} else {
+				patternIndex = 0;
+			}
+			break;
+		case 2:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //TDoc #
 			if (matcher.matches()) {
 				String tmp = matcher.group(1);
 				Matcher tdocMatcher = TDOC_PATTERN.matcher(tmp);
 				if (tdocMatcher.matches()) {
-					url = tdocMatcher.group(2);
-					url = "ftp://ftp.3gpp.org/tsg_sa/TSG_SA/TSGS_58/" + url;
+					// url = tdocMatcher.group(2);
+
 					tDoc = tdocMatcher.group(3);
+					url = ftpPrefix + tDoc + ".zip";
 				} else {
 					url = "";
 					tDoc = "";
@@ -127,7 +150,7 @@ public class SPPageHandler_58 implements PageHandler {
 				patternIndex = 0;
 			}
 			break;
-		case 2:
+		case 3:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //TDoc Title
 			if (matcher.matches()) {
 				docTitle = matcher.group(1);
@@ -136,7 +159,7 @@ public class SPPageHandler_58 implements PageHandler {
 				patternIndex = 0;
 			}
 			break;
-		case 3:
+		case 4:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", // Source
 			if (matcher.matches()) {
 				source = matcher.group(1);
@@ -146,8 +169,16 @@ public class SPPageHandler_58 implements PageHandler {
 				patternIndex = 0;
 			}
 			break;
-		case 4:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Doc type
+		case 5:
+			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Summary
+			if (matcher.matches()) {
+				patternIndex++;
+			} else {
+				patternIndex = 0;
+			}
+			break;
+		case 6:
+			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Doc title
 			if (matcher.matches()) {
 				docType = matcher.group(1);
 				patternIndex++;
@@ -155,7 +186,7 @@ public class SPPageHandler_58 implements PageHandler {
 				patternIndex = 0;
 			}
 			break;
-		case 5:
+		case 7:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Doc for
 			if (matcher.matches()) {
 				patternIndex++;
@@ -164,53 +195,16 @@ public class SPPageHandler_58 implements PageHandler {
 				patternIndex = 0;
 			}
 			break;
-		case 6:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Agenda Item
-			if (matcher.matches()) {
-				agendaItem = matcher.group(1);
-				patternIndex++;
-			} else {
-				patternIndex = 0;
-			}
-			break;
-		case 7:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Avail
-			if (matcher.matches()) {
-				patternIndex++;
-			} else {
-				patternIndex = 0;
-			}
-			break;
 		case 8:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Treated
+			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Decision
 			if (matcher.matches()) {
+				decision = matcher.group(1);
 				patternIndex++;
 			} else {
 				patternIndex = 0;
 			}
 			break;
 		case 9:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Decision
-			if (matcher.matches()) {
-				decision = matcher.group(1);
-				if(decision.length() > 50){
-					decision = decision.substring(0, 50);
-				}
-				patternIndex++;
-			} else {
-				patternIndex = 0;
-			}
-			break;
-		case 10:
-			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Wdrn
-			if (matcher.matches()) {
-				patternIndex++;
-			} else {
-				patternIndex = 0;
-			}
-			break;
-
-		case 11:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Rev_by
 			if (matcher.matches()) {
 				Matcher tdocMatcher = TDOC_PATTERN.matcher(matcher.group(1));
@@ -224,7 +218,7 @@ public class SPPageHandler_58 implements PageHandler {
 				patternIndex = 0;
 			}
 			break;
-		case 12:
+		case 10:
 			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Rev_of
 			if (matcher.matches()) {
 				Matcher tdocMatcher = TDOC_PATTERN.matcher(matcher.group(1));
@@ -238,14 +232,39 @@ public class SPPageHandler_58 implements PageHandler {
 				patternIndex = 0;
 			}
 			break;
-
+		case 11:
+			// "<TD .*><FONT .*>(.*)</FONT></TD>", //LS_source_file
+			if (matcher.matches()) {
+				lsSource = matcher.group(1);
+				patternIndex++;
+			} else {
+				patternIndex = 0;
+			}
+			break;
+		case 12:
+			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Comment
+			if (matcher.matches()) {
+				comment = matcher.group(1);
+				patternIndex++;
+			} else {
+				patternIndex = 0;
+			}
+			break;
+//		case 13:
+//			// "<TD .*><FONT .*>(.*)</FONT></TD>", //Rx
+//			if (matcher.matches()) {
+//				patternIndex++;
+//			} else {
+//				patternIndex = 0;
+//			}
+//			break;
 		case 13:
 			if (matcher.matches()) {
 				try {
 					DocumentObject doc = new DocumentObject(-1, meeting,
-							agendaItem, "", url, tDoc, docType, docTitle,
-							source, "", revByTDoc, revOfTDoc, "",
-							"", decision, "");
+							agendaItem, agendaItem, url, tDoc, docType,
+							docTitle, source, "", revByTDoc, revOfTDoc,
+							lsSource, comment, decision, "");
 					List<DocEntry> entries = db.findEntries(table,
 							doc.getTDoc());
 					if (entries.isEmpty()) {

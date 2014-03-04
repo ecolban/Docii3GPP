@@ -149,7 +149,7 @@ public class DataAccessObject {
 //			db.dbConnection.commit();
 
 			 ResultSet rs = stmt
-			 .executeQuery("select ID from TDOC_TABLE where MEETING like 'R2-84' and TDOC not like 'R2-%'");
+			 .executeQuery("select ID from TDOC_TABLE where MEETING like 'R2-85' and TDOC not like 'RP-%'");
 			 int count = 0;
 			 while (rs.next()) {
 			 int id = rs.getInt("ID");

@@ -27,16 +27,13 @@ public class CSVReader {
 	private static final Pattern LINE_PATTERN = Pattern.compile(//
 			"^" + CSV_FIELD_REGEXP + "(," + CSV_FIELD_REGEXP + ")*");
 
-	StringBuilder lineBuilder = new StringBuilder();
+	private StringBuilder lineBuilder = new StringBuilder();
 
 	private BufferedReader reader;
 
 	/**
 	 * Constructor
 	 * 
-	 * @param ui
-	 *            the {@link UI} instance that has all the contextual
-	 *            information needed.
 	 * 
 	 */
 	public CSVReader(BufferedReader reader, int numFieldsPrLine) {
@@ -55,9 +52,9 @@ public class CSVReader {
 		// Need to concatenate lines in case a row is broken into more than one
 		// line
 		boolean oddQuotes = false;
-		lineBuilder.setLength(0);
 		String line = reader.readLine();
-		lineBuilder.append(line);
+		if(line == null) return null;
+		StringBuilder lineBuilder = new StringBuilder(line);
 		while ((oddQuotes ^= oddQuotes(line))
 				&& (line = reader.readLine()) != null) {
 			lineBuilder.append(" ");

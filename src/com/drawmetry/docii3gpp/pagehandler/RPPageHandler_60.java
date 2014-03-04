@@ -9,12 +9,10 @@ import com.drawmetry.docii3gpp.database.DataAccessObject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.Arrays;
 import java.util.List;
 //import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -30,17 +28,18 @@ public class RPPageHandler_60 implements PageHandler {
 	private static final Logger LOGGER = Logger
 			.getLogger("com.drawmetry.docii3gpp");
 
-	private static final int DECISION_COLUMN = 1;
-	private static final int AGENDA_ITEM_COLUMN = 3;
-	private static final int TDOC_COLUMN = 4;
-	private static final int TITLE_COLUMN = 5;
-	private static final int SOURCE_COLUMN = 6;
-	private static final int TYPE_COLUMN = 7;
-	private static final int LS_SOURCE_COLUMN = 9;
-	private static final int WI_COLUMN = 13;
-	private static final int COMMENT_COLUMN = 14;
-	private static final int REV_OF_COLUMN = 15;
-	private static final int NUM_COLUMNS = 16;
+	private static final int DECISION_COLUMN = 2;
+	private static final int AGENDA_ITEM_COLUMN = 4;
+	private static final int TDOC_COLUMN = 5;
+	private static final int TITLE_COLUMN = 6;
+	private static final int SOURCE_COLUMN = 7;
+	private static final int TYPE_COLUMN = 8;
+	private static final int LS_SOURCE_COLUMN = 10;
+	private static final int WI_COLUMN = 14;
+	private static final int COMMENT_COLUMN = 15;
+	private static final int REV_OF_COLUMN = 16;
+	private static final int NUM_COLUMNS = 17;
+	private static final Pattern TDOC_PATTERN = Pattern.compile("RP-\\d{6}");
 
 	private final DataAccessObject db;
 	private final String meeting;
@@ -85,6 +84,9 @@ public class RPPageHandler_60 implements PageHandler {
 		String agendaTitle = fields[AGENDA_ITEM_COLUMN];
 		String url = ftpPrefix + fields[TDOC_COLUMN] + ".zip";
 		String tDoc = fields[TDOC_COLUMN];
+		if(!TDOC_PATTERN.matcher(tDoc).matches()) {
+			return;
+		}
 		String docTitle = fields[TITLE_COLUMN];
 		String source = fields[SOURCE_COLUMN];
 		String docType = fields[TYPE_COLUMN];

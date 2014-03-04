@@ -369,7 +369,7 @@ public class Configuration extends DefaultHandler {
 		if (meetingName != null && urlString != null && remoteDir != null) {
 			URL url = null;
 			try {
-				if (urlString.matches("ftp://.*")) {
+				if (urlString.matches("(ftp|http)://.*")) {
 					url = new URL(urlString);
 				} else {
 					File file = new File(urlString);
